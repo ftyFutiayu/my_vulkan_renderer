@@ -6,8 +6,8 @@
 
 #include "context.h"
 
-namespace render_2d{
-    void Init();
+namespace render_2d {
+    void Init(const std::vector<const char *> &extensions, CreateSurfaceFunc func);
 
     void Quit();
 }

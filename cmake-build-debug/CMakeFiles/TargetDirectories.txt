@@ -1,9 +1,0 @@
-E:/vs_project/my_vulkan_renderer/cmake-build-debug/CMakeFiles/My_Learn_Vulkan.dir
-E:/vs_project/my_vulkan_renderer/cmake-build-debug/CMakeFiles/edit_cache.dir
-E:/vs_project/my_vulkan_renderer/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-E:/vs_project/my_vulkan_renderer/cmake-build-debug/glfw/CMakeFiles/edit_cache.dir
-E:/vs_project/my_vulkan_renderer/cmake-build-debug/glfw/CMakeFiles/rebuild_cache.dir
-E:/vs_project/my_vulkan_renderer/cmake-build-debug/glfw/src/CMakeFiles/glfw.dir
-E:/vs_project/my_vulkan_renderer/cmake-build-debug/glfw/src/CMakeFiles/update_mappings.dir
-E:/vs_project/my_vulkan_renderer/cmake-build-debug/glfw/src/CMakeFiles/edit_cache.dir
-E:/vs_project/my_vulkan_renderer/cmake-build-debug/glfw/src/CMakeFiles/rebuild_cache.dir

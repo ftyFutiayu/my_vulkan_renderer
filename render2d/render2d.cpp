@@ -3,11 +3,10 @@
 //
 
 #include "render2d.h"
-#include "context.h"
 
 namespace render_2d {
-    void Init() {
-        Context::Init();
+    void Init(const std::vector<const char *> &extensions, CreateSurfaceFunc func) {
+        Context::Init(extensions, func);
     }
 
     void Quit() {

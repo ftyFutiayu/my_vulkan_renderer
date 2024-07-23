@@ -1,40 +1,57 @@
+#define GLFW_INCLUDE_VULKAN
+
 #include <GLFW/glfw3.h>
-#include <cstdio>
 #include "render2d/render2d.h"
 
-int main(void)
-{
-    setvbuf(stdout, NULL, _IONBF, BUFSIZ);
-    GLFWwindow* window;
-
+int main(void) {
     /* Initialize the library */
     if (!glfwInit())
         return -1;
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-    /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(640, 480, "GLFW CMake starter", NULL, NULL);
-    if (!window)
-    {
+    /* Create a windowed mode window */
+    GLFWwindow *window = glfwCreateWindow(640, 480, "GLFW CMake starter", NULL, NULL);
+
+    if (!window) {
         glfwTerminate();
         return -1;
     }
-    render_2d::Init();
+
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
-    glClearColor( 0.4f, 0.3f, 0.4f, 0.0f );
+    glClearColor(0.4f, 0.3f, 0.4f, 0.0f);
+
+    /* 获得GLFW 所支持的拓展个数 */
+    uint32_t extensionCount = 0;
+    const char **extensions = glfwGetRequiredInstanceExtensions(&extensionCount);
+    std::vector<const char *> extensionList(extensionCount);
+    for (uint32_t i = 0; i < extensionCount; ++i) {
+        extensionList[i] = extensions[i];
+    }
+    for (const auto &extension: extensionList) {
+        std::cout << " GLFW Required Extension: " << extension << std::endl;
+    }
+
+    render_2d::Init(extensionList, [&](VkInstance instance) {
+        VkSurfaceKHR surface;
+        if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+            const char *errorDescription;
+            glfwGetError(&errorDescription);
+            std::cerr << "GLFW Error  " << errorDescription << std::endl;
+            throw std::runtime_error("Failed to create GLFW window surface!");
+        }
+        return surface;
+    });
 
     /* Loop until the user closes the window */
-    while (!glfwWindowShouldClose(window))
-    {
-        /* Render here */
-        glClear(GL_COLOR_BUFFER_BIT);
-
+    while (!glfwWindowShouldClose(window)) {
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 
         /* Poll for and process events */
         glfwPollEvents();
     }
+
     render_2d::Quit();
 
     glfwTerminate();

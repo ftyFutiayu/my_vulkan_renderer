@@ -1,23 +1,23 @@
 #include "context.h"
-#include <vector>
-#include <iostream>
-#include <cstring>
+
 
 namespace render_2d {
 
     std::unique_ptr<Context> Context::context_instance_ = nullptr;
 
-    void Context::Init() {
-        context_instance_.reset(new Context);
+    void Context::Init(const std::vector<const char *> &extensions, CreateSurfaceFunc func) {
+        context_instance_.reset(new Context(extensions, func));
     }
 
     void Context::Quit() {
         context_instance_.reset();
     }
 
-    Context::Context() {
-        createInstance();
+    Context::Context(const std::vector<const char *> &extensions, CreateSurfaceFunc func) {
+        createInstance(extensions);
         pickPhysicalDevice();
+        // 获取glfw的surface
+        surface_ = func(instance_);
         queryQueueFamilyIndices();
         createDevice();
         getQueues();
@@ -29,11 +29,20 @@ namespace render_2d {
         vkDestroyInstance(instance_, nullptr);
     }
 
-    void Context::createInstance() {
+    void Context::createInstance(const std::vector<const char *> &extensions) {
         VkInstanceCreateInfo createInfo{};
         VkApplicationInfo appInfo{};
         appInfo.apiVersion = VK_API_VERSION_1_3;
+        createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &appInfo;
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+        createInfo.ppEnabledExtensionNames = extensions.data();
+
+        // 打印请求的扩展名
+        std::cout << "CreateInstance Requested Vulkan extensions:" << std::endl;
+        for (const auto &ext: extensions) {
+            std::cout << "  " << ext << std::endl;
+        }
 
         // 请求的验证层
         std::vector<const char *> requestedLayers = {"VK_LAYER_KHRONOS_validation"};
@@ -72,10 +81,21 @@ namespace render_2d {
 
         // 创建Vulkan实例
         if (vkCreateInstance(&createInfo, nullptr, &instance_) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create Vulkan instance_");
+            throw std::runtime_error("Failed to create Vulkan instance");
         }
 
-        std::cout << "Vulkan instance_ created" << std::endl;
+        std::cout << "Vulkan instance created" << std::endl;
+
+        // 验证创建的实例是否启用了正确的扩展
+        uint32_t extensionCount;
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+        std::vector<VkExtensionProperties> enabledExtensions(extensionCount);
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, enabledExtensions.data());
+
+        std::cout << "CreateInstance Enabled Vulkan extensions:" << std::endl;
+        for (const auto &extProp: enabledExtensions) {
+            std::cout << "  " << extProp.extensionName << std::endl;
+        }
     }
 
 
@@ -101,31 +121,6 @@ namespace render_2d {
         std::cout << "Using GPU: " << properties.deviceName << std::endl;
     }
 
-    /*
-     * 逻辑设备和GPU交互，不能直接使用 物理设备
-     */
-    void Context::createDevice() {
-        // Queue  《===device_======》physicalDevice_ 传输 commandBuffer作为桥梁
-
-        VkDeviceQueueCreateInfo queueCreateInfo{};
-        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        float queuePriority = 1.0f;
-        queueCreateInfo.pQueuePriorities = &queuePriority;
-        // 队列大小
-        queueCreateInfo.queueCount = 1;
-        queueCreateInfo.queueFamilyIndex = *queueFamilyIndices_.graphicsQueue;
-
-        // logicDevice 可以设置拓展和层 extensions
-        VkDeviceCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        createInfo.queueCreateInfoCount = 1;
-        createInfo.pQueueCreateInfos = &queueCreateInfo;
-        if (vkCreateDevice(physicalDevice_, &createInfo, nullptr, &device_) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create Vulkan device_.");
-        }
-        std::cout << "Vulkan device_ created" << std::endl;
-    }
-
     // 查询当前物理设备支持的队列属性
     void Context::queryQueueFamilyIndices() {
         uint32_t queueFamilyCount = 0;
@@ -136,20 +131,75 @@ namespace render_2d {
 
         for (int i = 0; i < queueFamilyCount; i++) {
             auto queueFamily = queueFamilies[i];
-            // 最多支持创建几个队列
-            queueFamily.queueCount;
-
             // 支持图像操作的queueFamilyIndex
             if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
                 queueFamilyIndices_.graphicsQueue = i;
+            }
+            // 查询是否支持显示
+            VkBool32 presentSupport;
+            vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice_,
+                                                 i,
+                                                 surface_,
+                                                 &presentSupport);
+            if (presentSupport) {
+                queueFamilyIndices_.presentQueue = i;
+            }
+            // 找到支持图像操作和显示的 deviceQueueFamily
+            if (queueFamilyIndices_) {
                 break;
             }
         }
     }
 
+    /*
+    * 逻辑设备和GPU交互，不能直接使用 物理设备
+    * Queue  《===device_======》physicalDevice_ 传输 commandBuffer作为桥梁
+    */
+    void Context::createDevice() {
+        // LogicDevice 可以设置拓展和层 extensions
+        VkDeviceCreateInfo createInfo{};
+        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+        float queuePriority = 1.0f;
+
+        // only need create one queue that supports both graphics and present
+        if (queueFamilyIndices_.presentQueue == queueFamilyIndices_.graphicsQueue) {
+            VkDeviceQueueCreateInfo queueCreateInfo{};
+            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queueCreateInfo.pQueuePriorities = &queuePriority;
+            queueCreateInfo.queueCount = 1.0f;
+            queueCreateInfo.queueFamilyIndex = *queueFamilyIndices_.graphicsQueue;
+            queueCreateInfos.emplace_back(queueCreateInfo);
+            std::cout << "Using ONE same queue for both graphics and present " << std::endl;
+        } else {
+            // graphicsQueueCreateInfo
+            VkDeviceQueueCreateInfo graphicsQueueCreateInfo{};
+            graphicsQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            graphicsQueueCreateInfo.pQueuePriorities = &queuePriority;
+            graphicsQueueCreateInfo.queueCount = 1.0f;
+            graphicsQueueCreateInfo.queueFamilyIndex = *queueFamilyIndices_.graphicsQueue;
+            // presentQueueCreateInfo
+            VkDeviceQueueCreateInfo presentQueueCreateInfo{};
+            presentQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            presentQueueCreateInfo.pQueuePriorities = &queuePriority;
+            presentQueueCreateInfo.queueCount = 1.0f;
+            presentQueueCreateInfo.queueFamilyIndex = *queueFamilyIndices_.presentQueue;
+            queueCreateInfos.emplace_back(graphicsQueueCreateInfo);
+            queueCreateInfos.emplace_back(presentQueueCreateInfo);
+            std::cout << "Using TWO queues for graphics and present " << std::endl;
+        }
+
+        createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+        createInfo.pQueueCreateInfos = queueCreateInfos.data(); // 修改此处
+        if (vkCreateDevice(physicalDevice_, &createInfo, nullptr, &device_) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create Vulkan device_.");
+        }
+        std::cout << "Vulkan device_ created" << std::endl;
+    }
+
     void Context::getQueues() {
         vkGetDeviceQueue(device_, *queueFamilyIndices_.graphicsQueue, 0, &graphicsQueue_);
-        std::cout << "Get graphics queue" << std::endl;
+        vkGetDeviceQueue(device_, *queueFamilyIndices_.presentQueue, 0, &presentQueue_);
     }
 
 }

@@ -5,3 +5,4 @@ cmake-build
 *.json
 *.spv
 compile_flags.txt
+cmake-build-debug

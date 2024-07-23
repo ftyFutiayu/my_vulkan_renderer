@@ -3,15 +3,13 @@
 //
 #pragma once
 
-#include "vulkan/vulkan.h"
-#include <memory>
-#include <cassert>
-#include <optional>
+#include "tool.h"
+
 
 namespace render_2d {
     class Context final {
     public:
-        static void Init();
+        static void Init(const std::vector<const char *> &extensions, CreateSurfaceFunc func);
 
         static void Quit();
 
@@ -24,21 +22,29 @@ namespace render_2d {
         ~Context();
 
         struct QueueFamilyIndices final {
-            // 图像操作用的命令队列
+            // 图像操作 命令队列
             std::optional<uint32_t> graphicsQueue;
+            // 显示命令队列
+            std::optional<uint32_t> presentQueue;
+
+            operator bool() const {
+                return graphicsQueue.has_value() && presentQueue.has_value();
+            }
         };
 
         VkInstance instance_;
         VkPhysicalDevice physicalDevice_;
         VkDevice device_;
         VkQueue graphicsQueue_;
+        VkQueue presentQueue_;
         QueueFamilyIndices queueFamilyIndices_;
+        VkSurfaceKHR surface_;
     private:
-        Context();
+        Context(const std::vector<const char *> &extensions, CreateSurfaceFunc func);
 
         static std::unique_ptr<Context> context_instance_;
 
-        void createInstance();
+        void createInstance(const std::vector<const char *> &extensions);
 
         void pickPhysicalDevice();
 
