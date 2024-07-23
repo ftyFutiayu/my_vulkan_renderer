@@ -31,6 +31,9 @@ set(My_Learn_Vulkan-SRC
         main.cpp
         render2d/context.cpp
         render2d/render2d.cpp
+        render2d/tool.h
+        render2d/swapchain.cpp
+        render2d/swapchain.h
 )
 
 # Add executable
