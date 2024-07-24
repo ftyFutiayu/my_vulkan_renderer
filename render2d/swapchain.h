@@ -3,6 +3,7 @@
 //
 
 #pragma once
+
 #include "tool.h"
 
 namespace render_2d {
@@ -10,7 +11,7 @@ namespace render_2d {
     public:
         VkSwapchainKHR swapchain;
 
-        SwapChain();
+        SwapChain(int width, int height);
 
         ~SwapChain();
 
@@ -21,9 +22,14 @@ namespace render_2d {
             uint32_t imageCount;
             // 图像格式
             VkSurfaceFormatKHR format;
+            // 图像显示屏幕之前的变换
+            VkSurfaceTransformFlagBitsKHR transform;
+
+            VkPresentModeKHR presentMode;
         };
 
         SwapChainInfo info;
-        void querySwapChainInfo();
+
+        void querySwapChainInfo(int width, int height);
     };
 }

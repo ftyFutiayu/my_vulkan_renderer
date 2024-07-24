@@ -1,8 +1,9 @@
 #include "context.h"
 
+#include <memory>
+
 
 namespace render_2d {
-
     std::unique_ptr<Context> Context::context_instance_ = nullptr;
 
     void Context::Init(const std::vector<const char *> &extensions, CreateSurfaceFunc func) {
@@ -24,7 +25,9 @@ namespace render_2d {
     }
 
     Context::~Context() {
-        // 需要按照顺序销毁
+        std::cout << "Destroying Vulkan context" << std::endl;
+        // 需要按照Create 的反顺序销毁
+        vkDestroySurfaceKHR(instance_, surface_, nullptr);
         vkDestroyDevice(device_, nullptr);
         vkDestroyInstance(instance_, nullptr);
     }
@@ -156,18 +159,20 @@ namespace render_2d {
     * Queue  《===device_======》physicalDevice_ 传输 commandBuffer作为桥梁
     */
     void Context::createDevice() {
+        std::array extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+
         // LogicDevice 可以设置拓展和层 extensions
         VkDeviceCreateInfo createInfo{};
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
         float queuePriority = 1.0f;
 
         // only need create one queue that supports both graphics and present
-        if (queueFamilyIndices_.presentQueue == queueFamilyIndices_.graphicsQueue) {
+        if (queueFamilyIndices_.presentQueue.value() == queueFamilyIndices_.graphicsQueue.value()) {
             VkDeviceQueueCreateInfo queueCreateInfo{};
             queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
             queueCreateInfo.pQueuePriorities = &queuePriority;
             queueCreateInfo.queueCount = 1.0f;
-            queueCreateInfo.queueFamilyIndex = *queueFamilyIndices_.graphicsQueue;
+            queueCreateInfo.queueFamilyIndex = queueFamilyIndices_.graphicsQueue.value();
             queueCreateInfos.emplace_back(queueCreateInfo);
             std::cout << "Using ONE same queue for both graphics and present " << std::endl;
         } else {
@@ -176,13 +181,13 @@ namespace render_2d {
             graphicsQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
             graphicsQueueCreateInfo.pQueuePriorities = &queuePriority;
             graphicsQueueCreateInfo.queueCount = 1.0f;
-            graphicsQueueCreateInfo.queueFamilyIndex = *queueFamilyIndices_.graphicsQueue;
+            graphicsQueueCreateInfo.queueFamilyIndex = queueFamilyIndices_.graphicsQueue.value();
             // presentQueueCreateInfo
             VkDeviceQueueCreateInfo presentQueueCreateInfo{};
             presentQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
             presentQueueCreateInfo.pQueuePriorities = &queuePriority;
             presentQueueCreateInfo.queueCount = 1.0f;
-            presentQueueCreateInfo.queueFamilyIndex = *queueFamilyIndices_.presentQueue;
+            presentQueueCreateInfo.queueFamilyIndex = queueFamilyIndices_.presentQueue.value();
             queueCreateInfos.emplace_back(graphicsQueueCreateInfo);
             queueCreateInfos.emplace_back(presentQueueCreateInfo);
             std::cout << "Using TWO queues for graphics and present " << std::endl;
@@ -190,7 +195,9 @@ namespace render_2d {
 
         createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
         createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-        createInfo.pQueueCreateInfos = queueCreateInfos.data(); // 修改此处
+        createInfo.pQueueCreateInfos = queueCreateInfos.data();
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+        createInfo.ppEnabledExtensionNames = extensions.data();
         if (vkCreateDevice(physicalDevice_, &createInfo, nullptr, &device_) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create Vulkan device_.");
         }
@@ -200,6 +207,15 @@ namespace render_2d {
     void Context::getQueues() {
         vkGetDeviceQueue(device_, *queueFamilyIndices_.graphicsQueue, 0, &graphicsQueue_);
         vkGetDeviceQueue(device_, *queueFamilyIndices_.presentQueue, 0, &presentQueue_);
+    }
+
+    // 初始化 Swapchain
+    void Context::InitSwapChain(int width, int height) {
+        swapchain_ = std::make_unique<SwapChain>(width, height);
+    }
+
+    void Context::QuitSwapChain() {
+        swapchain_.reset();
     }
 
 }

@@ -8,31 +8,62 @@
 
 namespace render_2d {
 
-    SwapChain::SwapChain() {
-        querySwapChainInfo();
+    SwapChain::SwapChain(int width, int height) {
+        querySwapChainInfo(width, height);
 
         VkSwapchainCreateInfoKHR createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         // GPU的图大于屏幕，是否裁切
-        createInfo.clipped = VK_SUCCESS;
+        createInfo.clipped = VK_TRUE;
         // 交换链存在很多imageArray图片，需要制定绘制哪一个图片
         // imageArrayLayers ： 多层的图片数组，可以理解为二维数组 指定1就是不需要3D图像
         createInfo.imageArrayLayers = 1;
         // 图像使用方法 （作为颜色附件）
-        createInfo.imageUsage = VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         // 图像显示至窗口，颜色如何blending
-        createInfo.compositeAlpha = VkCompositeAlphaFlagBitsKHR::VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
         createInfo.surface = Context::GetInstance().surface_;
 
         // 图像颜色空间
+        createInfo.imageColorSpace = info.format.colorSpace;
+        createInfo.imageExtent = info.imageExtent;
+        createInfo.minImageCount = info.imageCount;
+        createInfo.imageFormat = info.format.format;
 
+        // Present mode
+        createInfo.presentMode = info.presentMode;
+        // preTransform 表示在交换链图像呈现到屏幕上之前，图像应该经历的转换
+        createInfo.preTransform = info.transform;
+
+        // 设置命令队列
+        auto &queueFamilyIndices = Context::GetInstance().queueFamilyIndices_;
+        if (queueFamilyIndices.graphicsQueue.value() == queueFamilyIndices.presentQueue.value()) {
+            // 如果只有一个命令队列，设置图像只能被一个 queue 使用
+            createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            createInfo.queueFamilyIndexCount = 0; // 不需要设置
+            createInfo.pQueueFamilyIndices = nullptr; // 不需要设置
+        } else {
+            std::array<uint32_t, 2> indices = {queueFamilyIndices.graphicsQueue.value(),
+                                               queueFamilyIndices.presentQueue.value()};
+            // 如果有多个命令队列，设置图像可以被多个 queue 使用
+            createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+            createInfo.pQueueFamilyIndices = indices.data();
+        }
+
+        VkResult result = vkCreateSwapchainKHR(Context::GetInstance().device_, &createInfo,
+                                               nullptr, &swapchain);
+        if (result != VK_SUCCESS) {
+            throw std::runtime_error("failed to create swap chain!");
+        }
+        std::cout << "SwapChain created successfully!" << std::endl;
     }
 
     SwapChain::~SwapChain() {
-
+        std::cout << "Destroying SwapChain..." << std::endl;
+        vkDestroySwapchainKHR(Context::GetInstance().device_, swapchain, nullptr);
     }
 
-    void SwapChain::querySwapChainInfo() {
+    void SwapChain::querySwapChainInfo(int width, int height) {
         // 查询物理设备支持的Image Formats
         auto &physicalDevice = Context::GetInstance().physicalDevice_;
         auto &surface = Context::GetInstance().surface_;
@@ -46,6 +77,7 @@ namespace render_2d {
             // 格式为SRGB且支持非线性SRBG 颜色空间
             if (format.format == VK_FORMAT_R8G8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
                 info.format = format;
+                std::cout << " SwapChainFound suitable surface format" << std::endl;
                 break;
             }
         }
@@ -53,7 +85,45 @@ namespace render_2d {
         // 查询图像个数
         VkSurfaceCapabilitiesKHR capabilities;
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &capabilities);
+        // 夹紧区间 [minImageCount, maxImageCount]
         info.imageCount = std::clamp<uint32_t>(2, capabilities.minImageCount + 1, capabilities.maxImageCount);
+        std::cout << "SwapChain Image count: " << info.imageCount << std::endl;
 
+        // 图像大小
+        info.imageExtent.height = std::clamp<uint32_t>(height, capabilities.minImageExtent.height,
+                                                       capabilities.maxImageExtent.height);
+        info.imageExtent.width = std::clamp<uint32_t>(width, capabilities.minImageExtent.width,
+                                                      capabilities.maxImageExtent.width);
+        std::cout << "SwapChain Image extent width  " << info.imageExtent.width << "  Height: "
+                  << info.imageExtent.height
+                  << std::endl;
+
+        // 图像传递屏幕之前的修改（旋转..）
+        info.transform = capabilities.currentTransform;
+
+
+        uint32_t presentModeCount = 0;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
+        std::cout << "SwapChain Present mode count: " << presentModeCount << std::endl;
+        std::vector<VkPresentModeKHR> presentModes(presentModeCount);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface,
+                                                  &presentModeCount,
+                                                  presentModes.data());
+        /*
+         * Present Modes:
+         * VK_PRESENT_MODE_FIFO_KHR : 先入先出 (屏幕后的图像会形成队列排队显示)
+         * VK_PRESENT_MODE_FIFO_RELAXED_KHR : 也是先入先出，会存在画面撕裂，会强行放弃现在的图像
+         * VK_PRESENT_MODE_IMMEDIATE_KHR : 性能最高，也会存在画面撕裂
+         * VK_PRESENT_MODE_MAILBOX_KHR : 双缓冲，在Present的时候
+         */
+
+        info.presentMode = VkPresentModeKHR::VK_PRESENT_MODE_FIFO_KHR;
+
+        for (const auto &mode: presentModes) {
+            if (mode == VkPresentModeKHR::VK_PRESENT_MODE_MAILBOX_KHR) {
+                info.presentMode = mode;
+                break;
+            }
+        }
     }
 }

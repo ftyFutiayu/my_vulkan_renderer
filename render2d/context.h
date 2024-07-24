@@ -4,6 +4,7 @@
 #pragma once
 
 #include "tool.h"
+#include "swapchain.h"
 
 
 namespace render_2d {
@@ -39,6 +40,12 @@ namespace render_2d {
         VkQueue presentQueue_;
         QueueFamilyIndices queueFamilyIndices_;
         VkSurfaceKHR surface_;
+        std::unique_ptr<SwapChain> swapchain_;
+
+        void InitSwapChain(int width, int height);
+
+        void QuitSwapChain();
+
     private:
         Context(const std::vector<const char *> &extensions, CreateSurfaceFunc func);
 

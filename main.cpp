@@ -10,7 +10,7 @@ int main(void) {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
     /* Create a windowed mode window */
-    GLFWwindow *window = glfwCreateWindow(640, 480, "GLFW CMake starter", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(1024, 720, "GLFW CMake starter", NULL, NULL);
 
     if (!window) {
         glfwTerminate();
@@ -41,7 +41,7 @@ int main(void) {
             throw std::runtime_error("Failed to create GLFW window surface!");
         }
         return surface;
-    });
+    }, 1024, 720);
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window)) {
