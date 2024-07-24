@@ -29,7 +29,13 @@ namespace render_2d {
         };
 
         SwapChainInfo info;
+        std::vector<VkImage> images;
+        std::vector<VkImageView> imageViews;
 
         void querySwapChainInfo(int width, int height);
+
+        void getImages();
+
+        void createImageViews();
     };
 }

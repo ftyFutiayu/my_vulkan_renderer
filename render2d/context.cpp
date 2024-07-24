@@ -7,7 +7,7 @@ namespace render_2d {
     std::unique_ptr<Context> Context::context_instance_ = nullptr;
 
     void Context::Init(const std::vector<const char *> &extensions, CreateSurfaceFunc func) {
-        context_instance_.reset(new Context(extensions, func));
+        context_instance_.reset(new Context(extensions, std::move(func)));
     }
 
     void Context::Quit() {
@@ -212,6 +212,8 @@ namespace render_2d {
     // 初始化 Swapchain
     void Context::InitSwapChain(int width, int height) {
         swapchain_ = std::make_unique<SwapChain>(width, height);
+        swapchain_->getImages();
+        swapchain_->createImageViews();
     }
 
     void Context::QuitSwapChain() {

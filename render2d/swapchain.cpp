@@ -60,6 +60,9 @@ namespace render_2d {
 
     SwapChain::~SwapChain() {
         std::cout << "Destroying SwapChain..." << std::endl;
+        for (auto &imageView: imageViews) {
+            vkDestroyImageView(Context::GetInstance().device_, imageView, nullptr);
+        }
         vkDestroySwapchainKHR(Context::GetInstance().device_, swapchain, nullptr);
     }
 
@@ -125,5 +128,52 @@ namespace render_2d {
                 break;
             }
         }
+    }
+
+    /*
+     * 获取交换链中的图像
+     */
+    void SwapChain::getImages() {
+        uint32_t imageCount = 0;
+        vkGetSwapchainImagesKHR(Context::GetInstance().device_, swapchain, &imageCount, nullptr);
+        images.resize(imageCount);
+        vkGetSwapchainImagesKHR(Context::GetInstance().device_, swapchain, &imageCount, images.data());
+        std::cout << "SwapChain Get Image count: " << imageCount << std::endl;
+    }
+
+    /*
+     * 创建交换链中的ImageView
+     */
+    void SwapChain::createImageViews() {
+        imageViews.resize(images.size());
+        for (size_t i = 0; i < imageViews.size(); i++) {
+            VkImageViewCreateInfo createInfo{};
+            createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            // mapping 实现A -> B 颜色映射 显式设置 VkComponentMapping
+            VkComponentMapping mapping{
+                    VK_COMPONENT_SWIZZLE_R, // r
+                    VK_COMPONENT_SWIZZLE_G, // g
+                    VK_COMPONENT_SWIZZLE_B, // b
+                    VK_COMPONENT_SWIZZLE_A  // a
+            };
+            createInfo.components = mapping;
+            createInfo.format = info.format.format;
+            // mipmap level
+            VkImageSubresourceRange subresourceRange{};
+            subresourceRange.baseMipLevel = 0;
+            subresourceRange.levelCount = 1; // 需要多少阶纹理？
+            subresourceRange.baseArrayLayer = 0; // 3D 图像需要设置
+            subresourceRange.layerCount = 1; // 3D 图像需要设置
+            subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            createInfo.subresourceRange = subresourceRange;
+
+            createInfo.image = images[i]; // 指定当前图像
+            VkResult result = vkCreateImageView(Context::GetInstance().device_, &createInfo, nullptr, &imageViews[i]);
+            if (result != VK_SUCCESS) {
+                throw std::runtime_error("failed to create image view!");
+            }
+        }
+        std::cout << "SwapChain Create Image Views successfully!" << std::endl;
     }
 }
