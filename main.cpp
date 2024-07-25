@@ -17,7 +17,6 @@ int main(void) {
         return -1;
     }
 
-    /* Make the window's context current */
     glfwMakeContextCurrent(window);
     glClearColor(0.4f, 0.3f, 0.4f, 0.0f);
 

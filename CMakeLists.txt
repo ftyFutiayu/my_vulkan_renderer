@@ -34,6 +34,9 @@ set(My_Learn_Vulkan-SRC
         render2d/tool.h
         render2d/swapchain.cpp
         render2d/swapchain.h
+        render2d/shader.cpp
+        render2d/shader.h
+        render2d/tool.cpp
 )
 
 # Add executable
@@ -55,3 +58,8 @@ if(MSVC)
         set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT My_Learn_Vulkan)
     endif()
 endif()
+
+# decode shader
+find_program(GLSLC_PROGRAM glslc REQUIRED)
+execute_process(COMMAND ${GLSLC_PROGRAM} ${CMAKE_SOURCE_DIR}/shader/shader.vert -o ${CMAKE_SOURCE_DIR}/vert.spv)
+execute_process(COMMAND ${GLSLC_PROGRAM} ${CMAKE_SOURCE_DIR}/shader/shader.frag -o ${CMAKE_SOURCE_DIR}/frag.spv)
