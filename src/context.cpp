@@ -1,6 +1,4 @@
-#include "context.h"
-
-#include <memory>
+#include "../include/context.h"
 
 
 namespace render_2d {
@@ -22,6 +20,8 @@ namespace render_2d {
         queryQueueFamilyIndices();
         createDevice();
         getQueues();
+        // init RenderProgress
+        render_process_.reset(new RenderProcess);
     }
 
     Context::~Context() {

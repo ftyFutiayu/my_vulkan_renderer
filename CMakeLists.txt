@@ -28,15 +28,13 @@ endif()
 
 # Set source files
 set(My_Learn_Vulkan-SRC
-        main.cpp
-        render2d/context.cpp
-        render2d/render2d.cpp
-        render2d/tool.h
-        render2d/swapchain.cpp
-        render2d/swapchain.h
-        render2d/shader.cpp
-        render2d/shader.h
-        render2d/tool.cpp
+        src/main.cpp
+        src/context.cpp
+        src/render2d.cpp
+        src/swapchain.cpp
+        src/shader.cpp
+        src/tool.cpp
+        src/render_process.cpp
 )
 
 # Add executable

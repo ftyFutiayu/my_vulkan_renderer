@@ -5,12 +5,11 @@
 #pragma once
 
 #include "tool.h"
-#include "context.h"
 
 namespace render_2d {
     class Shader final {
     public:
-        static void Init(const std::string &vertex_source, const std::string &fragment_source);
+        static void Init(const std::string &vertex_source, const std::string &fragment_source, VkDevice &device);
 
         static void Quit();
 
@@ -22,12 +21,20 @@ namespace render_2d {
         VkShaderModule vertexShaderModule_;
         VkShaderModule fragmentShaderModule_;
 
+        std::vector<VkPipelineShaderStageCreateInfo> GetShaderStages();
+
         ~Shader();
 
     private:
-        Shader(const std::string &vertex_source, const std::string &fragment_source);
+        Shader(const std::string &vertex_source, const std::string &fragment_source, VkDevice &device);
 
         static std::unique_ptr<Shader> shader_;
+
+        std::vector<VkPipelineShaderStageCreateInfo> stages_;
+
+        void initStages();
+
+        VkDevice device_;
     };
 
 }

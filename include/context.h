@@ -2,6 +2,7 @@
 // Created by 12381 on 24-7-21.
 //
 #pragma once
+#include "render_process.h"
 
 #include "tool.h"
 #include "swapchain.h"
@@ -41,7 +42,7 @@ namespace render_2d {
         QueueFamilyIndices queueFamilyIndices_;
         VkSurfaceKHR surface_;
         std::unique_ptr<SwapChain> swapchain_;
-
+        std::unique_ptr<RenderProcess> render_process_;
         void InitSwapChain(int width, int height);
 
         void QuitSwapChain();

@@ -3,8 +3,8 @@
 //
 
 #include <algorithm>
-#include "swapchain.h"
-#include "context.h"
+#include "../include/swapchain.h"
+#include "../include/context.h"
 
 namespace render_2d {
 

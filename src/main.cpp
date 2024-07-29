@@ -1,7 +1,7 @@
 #define GLFW_INCLUDE_VULKAN
 
-#include <GLFW/glfw3.h>
-#include "render2d/render2d.h"
+#include "GLFW/glfw3.h"
+#include "../include/render2d.h"
 
 int main(void) {
     /* Initialize the library */
