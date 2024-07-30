@@ -13,11 +13,15 @@ namespace render_2d {
         Shader::Init(ReadWholeFile("../vert.spv"),
                      ReadWholeFile("../frag.spv"),
                      logic_device);
-        Context::GetInstance().render_process_->CreatePipeline(width, height, logic_device);
+        Context::GetInstance().InitRenderProcess();
+        Context::GetInstance().render_process_->InitRenderPass();
+        Context::GetInstance().render_process_->InitLayout();
+        Context::GetInstance().render_process_->CreatePipeline(width, height);
+
     }
 
     void Quit() {
-        Context::GetInstance().render_process_->DestroyPipeline(Context::GetInstance().device_);
+        Context::GetInstance().render_process_.reset();
         Context::GetInstance().QuitSwapChain();
         Shader::Quit();
         Context::Quit();

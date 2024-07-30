@@ -1,9 +1,11 @@
 .vscode
 .cache
 .idea
+.build
+/build
 cmake-build
 *.json
-*.spv
 compile_flags.txt
 cmake-build-debug
 cmake-build-release
+

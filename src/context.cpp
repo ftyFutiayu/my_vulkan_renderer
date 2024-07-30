@@ -20,8 +20,6 @@ namespace render_2d {
         queryQueueFamilyIndices();
         createDevice();
         getQueues();
-        // init RenderProgress
-        render_process_.reset(new RenderProcess);
     }
 
     Context::~Context() {
@@ -35,7 +33,8 @@ namespace render_2d {
     void Context::createInstance(const std::vector<const char *> &extensions) {
         VkInstanceCreateInfo createInfo{};
         VkApplicationInfo appInfo{};
-        appInfo.apiVersion = VK_API_VERSION_1_3;
+        // ubuntu 不支持 1.3
+        appInfo.apiVersion = VK_API_VERSION_1_0;
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &appInfo;
         createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
@@ -67,13 +66,7 @@ namespace render_2d {
             }
         }
 
-        // 如果任何请求的层不可用，则抛出异常
-        if (enabledLayers.size() != requestedLayers.size()) {
-            throw std::runtime_error("One or more requested validation layers are not available.");
-        }
-
-        // 设置创建信息中的层
-        createInfo.enabledLayerCount = static_cast<uint32_t>(enabledLayers.size());
+        // 如果任何请求的层不可用，则抛出异常throwdLayers.size());
         createInfo.ppEnabledLayerNames = enabledLayers.data();
 
         // 打印所有可用的层
@@ -214,6 +207,11 @@ namespace render_2d {
         swapchain_ = std::make_unique<SwapChain>(width, height);
         swapchain_->getImages();
         swapchain_->createImageViews();
+    }
+
+    // init RenderProgress
+    void Context::InitRenderProcess(){
+        render_process_.reset(new RenderProcess(device_, *swapchain_));
     }
 
     void Context::QuitSwapChain() {

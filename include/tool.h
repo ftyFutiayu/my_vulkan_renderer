@@ -1,6 +1,7 @@
 //
 // Created by 12381 on 24-7-23.
 //
+#pragma once
 
 #include "vulkan/vulkan.h"
 #include <memory>

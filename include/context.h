@@ -47,6 +47,8 @@ namespace render_2d {
 
         void QuitSwapChain();
 
+        void InitRenderProcess();
+
     private:
         Context(const std::vector<const char *> &extensions, CreateSurfaceFunc func);
 

@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(My_Learn_Vulkan)
 
@@ -38,7 +40,11 @@ set(My_Learn_Vulkan-SRC
 )
 
 # Add executable
-add_executable(My_Learn_Vulkan WIN32 ${My_Learn_Vulkan-SRC})
+if(WIN32)
+    add_executable(My_Learn_Vulkan WIN32 ${My_Learn_Vulkan-SRC})
+else()
+    add_executable(My_Learn_Vulkan ${My_Learn_Vulkan-SRC})
+endif()
 
 # Link libraries with keyword arguments
 target_link_libraries(My_Learn_Vulkan PUBLIC
