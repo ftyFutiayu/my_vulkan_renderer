@@ -206,7 +206,7 @@ namespace render_2d {
     void Context::InitSwapChain(int width, int height) {
         swapchain_ = std::make_unique<SwapChain>(width, height);
         swapchain_->getImages();
-        swapchain_->createImageViews();
+        swapchain_->CreateImageViews();
     }
 
     // init RenderProgress

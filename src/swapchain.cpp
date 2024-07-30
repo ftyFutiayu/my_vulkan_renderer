@@ -58,14 +58,6 @@ namespace render_2d {
         std::cout << "SwapChain created successfully!" << std::endl;
     }
 
-    SwapChain::~SwapChain() {
-        std::cout << "Destroying SwapChain..." << std::endl;
-        for (auto &imageView: imageViews) {
-            vkDestroyImageView(Context::GetInstance().device_, imageView, nullptr);
-        }
-        vkDestroySwapchainKHR(Context::GetInstance().device_, swapchain, nullptr);
-    }
-
     void SwapChain::querySwapChainInfo(int width, int height) {
         // 查询物理设备支持的Image Formats
         auto &physicalDevice = Context::GetInstance().physicalDevice_;
@@ -144,7 +136,7 @@ namespace render_2d {
     /*
      * 创建交换链中的ImageView
      */
-    void SwapChain::createImageViews() {
+    void SwapChain::CreateImageViews() {
         imageViews.resize(images.size());
         for (size_t i = 0; i < imageViews.size(); i++) {
             VkImageViewCreateInfo createInfo{};
@@ -175,5 +167,40 @@ namespace render_2d {
             }
         }
         std::cout << "SwapChain Create Image Views successfully!" << std::endl;
+    }
+
+    /**
+     * FrameBuffer -> Texture -> VkImage 本质就是图像
+     * 必须使用 FrameBuffer ，不能直接往颜色附件input点的颜色
+     * 创建顺序：
+     * LogicDevice -> ShaderModule -> RenderPass(Pipeline)-> FrameBuffer
+     * 
+    */
+    void SwapChain::CreateFramebuffers(int width, int height){
+        framebuffers.resize(images.size());
+
+        for(size_t i = 0; i < framebuffers.size(); i++){
+            VkFramebufferCreateInfo frameBufferInfo{};
+            frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            frameBufferInfo.pAttachments = &imageViews[i]; // 颜色附件
+            frameBufferInfo.width = width;
+            frameBufferInfo.height = height;
+            frameBufferInfo.renderPass = Context::GetInstance().render_process_->renderPass_;
+            frameBufferInfo.layers = 1; // 底层数组只拿一个元素
+            vkCreateFramebuffer(Context::GetInstance().device_, &frameBufferInfo, nullptr, &framebuffers[i]);
+            std::cout << "SwapChain Create Framebuffers success! Index: " << i << std::endl;
+        }
+    }
+
+    SwapChain::~SwapChain() {
+        std::cout << "Destroying SwapChain..." << std::endl;
+        for(auto &frameBuffer: framebuffers) {
+            vkDestroyFramebuffer(Context::GetInstance().device_, frameBuffer, nullptr);
+        }
+
+        for (auto &imageView: imageViews) {
+            vkDestroyImageView(Context::GetInstance().device_, imageView, nullptr);
+        }
+        vkDestroySwapchainKHR(Context::GetInstance().device_, swapchain, nullptr);
     }
 }

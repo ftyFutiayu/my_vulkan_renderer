@@ -17,7 +17,7 @@ namespace render_2d {
         Context::GetInstance().render_process_->InitRenderPass();
         Context::GetInstance().render_process_->InitLayout();
         Context::GetInstance().render_process_->CreatePipeline(width, height);
-
+        Context::GetInstance().swapchain_->CreateFramebuffers(width, height);
     }
 
     void Quit() {
