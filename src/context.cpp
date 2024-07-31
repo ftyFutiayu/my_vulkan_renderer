@@ -164,7 +164,7 @@ namespace render_2d {
             VkDeviceQueueCreateInfo queueCreateInfo{};
             queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
             queueCreateInfo.pQueuePriorities = &queuePriority;
-            queueCreateInfo.queueCount = 1.0f;
+            queueCreateInfo.queueCount = 1;
             queueCreateInfo.queueFamilyIndex = queueFamilyIndices_.graphicsQueue.value();
             queueCreateInfos.emplace_back(queueCreateInfo);
             std::cout << "Using ONE same queue for both graphics and present " << std::endl;
@@ -173,13 +173,13 @@ namespace render_2d {
             VkDeviceQueueCreateInfo graphicsQueueCreateInfo{};
             graphicsQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
             graphicsQueueCreateInfo.pQueuePriorities = &queuePriority;
-            graphicsQueueCreateInfo.queueCount = 1.0f;
+            graphicsQueueCreateInfo.queueCount = 1;
             graphicsQueueCreateInfo.queueFamilyIndex = queueFamilyIndices_.graphicsQueue.value();
             // presentQueueCreateInfo
             VkDeviceQueueCreateInfo presentQueueCreateInfo{};
             presentQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
             presentQueueCreateInfo.pQueuePriorities = &queuePriority;
-            presentQueueCreateInfo.queueCount = 1.0f;
+            presentQueueCreateInfo.queueCount = 1;
             presentQueueCreateInfo.queueFamilyIndex = queueFamilyIndices_.presentQueue.value();
             queueCreateInfos.emplace_back(graphicsQueueCreateInfo);
             queueCreateInfos.emplace_back(presentQueueCreateInfo);
@@ -198,21 +198,17 @@ namespace render_2d {
     }
 
     void Context::getQueues() {
-        vkGetDeviceQueue(device_, *queueFamilyIndices_.graphicsQueue, 0, &graphicsQueue_);
-        vkGetDeviceQueue(device_, *queueFamilyIndices_.presentQueue, 0, &presentQueue_);
+        vkGetDeviceQueue(device_, queueFamilyIndices_.graphicsQueue.value(), 0, &graphicsQueue_);
+        vkGetDeviceQueue(device_, queueFamilyIndices_.presentQueue.value(), 0, &presentQueue_);
     }
 
     // 初始化 Swapchain
     void Context::InitSwapChain(int width, int height) {
-        swapchain_ = std::make_unique<SwapChain>(width, height);
+        swapchain_ = std::make_shared<SwapChain>(width, height);
         swapchain_->getImages();
         swapchain_->CreateImageViews();
     }
 
-    // init RenderProgress
-    void Context::InitRenderProcess(){
-        render_process_.reset(new RenderProcess(device_, *swapchain_));
-    }
 
     void Context::QuitSwapChain() {
         swapchain_.reset();

@@ -37,6 +37,7 @@ set(My_Learn_Vulkan-SRC
         src/shader.cpp
         src/tool.cpp
         src/render_process.cpp
+        src/renderer.cpp
 )
 
 # Add executable

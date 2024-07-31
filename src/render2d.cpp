@@ -18,9 +18,12 @@ namespace render_2d {
         Context::GetInstance().render_process_->InitLayout();
         Context::GetInstance().render_process_->CreatePipeline(width, height);
         Context::GetInstance().swapchain_->CreateFramebuffers(width, height);
+        // init vulkan Renderer
+        Context::GetInstance().InitRenderer();
     }
 
     void Quit() {
+        Context::GetInstance().renderer_.reset();
         Context::GetInstance().render_process_.reset();
         Context::GetInstance().QuitSwapChain();
         Shader::Quit();

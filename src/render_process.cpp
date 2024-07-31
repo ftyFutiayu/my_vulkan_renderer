@@ -51,7 +51,7 @@ namespace render_2d {
         VkPipelineRasterizationStateCreateInfo rasterizerCreateInfo{};
         rasterizerCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         rasterizerCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-        rasterizerCreateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        rasterizerCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
         rasterizerCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizerCreateInfo.lineWidth = 1.0f; // 边框宽度1
         rasterizerCreateInfo.depthClampEnable = VK_FALSE;
@@ -90,8 +90,7 @@ namespace render_2d {
         auto res = vkCreateGraphicsPipelines(device_, nullptr, 1,
                                              &pipelineCreateInfo, nullptr, &pipeline_);
         // create pipeline
-        if (res != VK_SUCCESS)
-        {
+        if (res != VK_SUCCESS) {
             throw std::runtime_error("Failed to create Render pipeline");
         }
         std::cout << "Graphics pipeline created successfully." << std::endl;
@@ -101,16 +100,16 @@ namespace render_2d {
     void RenderProcess::InitLayout() {
         VkPipelineLayoutCreateInfo createInfo{};
         vkCreatePipelineLayout(device_, &createInfo, nullptr, &layout_);
-        std::cout << "Pipeline layout created" << std::endl;
+        std::cout << "Pipeline layout created Success" << std::endl;
     }
 
-        /**
-         * 创建 render_pass
-         * const VkAttachmentDescription*    pAttachments;
-         * const VkSubpassDescription*       pSubpasses;
-         * const VkSubpassDependency*        pDependencies;
-        */
-    void RenderProcess::InitRenderPass(){
+    /**
+     * 创建 render_pass
+     * const VkAttachmentDescription*    pAttachments;
+     * const VkSubpassDescription*       pSubpasses;
+     * const VkSubpassDependency*        pDependencies;
+    */
+    void RenderProcess::InitRenderPass() {
 
         VkRenderPassCreateInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -119,18 +118,18 @@ namespace render_2d {
         VkAttachmentDescription attachmentDescription;
         attachmentDescription.format = swapchain_.info.format.format;
         attachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // out布局为优化后的颜色布局
+        attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         // 加载的时候全部清空
         attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         // 存储到显存
-        attachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE; 
+        attachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         // 模板缓冲
         /*
         frameBuffer为多个 attachment的绑定组
         一个 frameBuffer为多个 需要：
         1. 至少一个颜色附件，填入颜色信息 (attachment就是图像)
         2. 0个或者多个深度/模板缓冲，填入深度/模板信息 （3维中，用zbuffer描述物体前后顺序）
-        */ 
+        */
         attachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -148,10 +147,10 @@ namespace render_2d {
         VkSubpassDependency dependency{};
         // src : 先执行的 subpass / dst : 后执行的 subpass
         dependency.srcSubpass = VK_SUBPASS_EXTERNAL; // 外部子pass
-         // 0 同VkAttachmentReference，为设置VkAttachmentDescription数组的下标，指定使用哪个纹理附件
+        // 0 同VkAttachmentReference，为设置VkAttachmentDescription数组的下标，指定使用哪个纹理附件
         dependency.dstSubpass = 0;
         // 当前渲染通道如何修改权限 （修改颜色的等...）
-        dependency.dstAccessMask =  VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
         // stages : 当前渲染通道走完以后应用到什么场景中 (均设置为颜色输出)
         dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -163,7 +162,7 @@ namespace render_2d {
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
-        if(vkCreateRenderPass(device_, &renderPassInfo, nullptr, &renderPass_)!= VK_SUCCESS) {
+        if (vkCreateRenderPass(device_, &renderPassInfo, nullptr, &renderPass_) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create Vulkan render pass.");
         }
         std::cout << "Render pass created successfully." << std::endl;

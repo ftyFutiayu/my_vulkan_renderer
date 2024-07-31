@@ -182,14 +182,15 @@ namespace render_2d {
         for(size_t i = 0; i < framebuffers.size(); i++){
             VkFramebufferCreateInfo frameBufferInfo{};
             frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            frameBufferInfo.attachmentCount = 1; 
             frameBufferInfo.pAttachments = &imageViews[i]; // 颜色附件
             frameBufferInfo.width = width;
             frameBufferInfo.height = height;
             frameBufferInfo.renderPass = Context::GetInstance().render_process_->renderPass_;
             frameBufferInfo.layers = 1; // 底层数组只拿一个元素
             vkCreateFramebuffer(Context::GetInstance().device_, &frameBufferInfo, nullptr, &framebuffers[i]);
-            std::cout << "SwapChain Create Framebuffers success! Index: " << i << std::endl;
         }
+        std::cout << "SwapChain Create Framebuffers success!" << std::endl;
     }
 
     SwapChain::~SwapChain() {

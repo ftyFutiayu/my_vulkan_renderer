@@ -42,6 +42,9 @@ int main(void) {
         return surface;
     }, 1024, 720);
 
+    /* Get Vulkan Renderer */
+    auto &renderer = render_2d::GetRenderer();
+    renderer.Render();
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window)) {
         /* Swap front and back buffers */
@@ -49,6 +52,9 @@ int main(void) {
 
         /* Poll for and process events */
         glfwPollEvents();
+
+        /* Draw */
+        renderer.Render();
     }
 
     render_2d::Quit();
