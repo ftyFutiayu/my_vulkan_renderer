@@ -1,50 +1,53 @@
 #pragma once
 
 #include <utility>
-
-#include "vulkan/vulkan.h"
+#include "tool.h"
 #include "swapchain.h"
 #include "render_process.h"
+#include "commandManager.h"
 
-namespace render_2d {
-    class Renderer final {
+namespace render_2d
+{
+    class Renderer final
+    {
     public:
         Renderer(VkDevice logicDevice, std::shared_ptr<SwapChain> swapChain,
-                 std::shared_ptr<RenderProcess> renderProcess, VkQueue graphicsQueue, VkQueue presentQueue,
-                 uint32_t graphicsQueueIndex, uint32_t presentQueueIndex)
-                : device_(logicDevice), swapChain_(std::move(swapChain)), renderProcess_(std::move(renderProcess)),
-                  graphicsQueue_(graphicsQueue), presentQueue_(presentQueue),
-                  graphicsQueueIndex_(graphicsQueueIndex), presentQueueIndex_(presentQueueIndex) {
-
-            initCommandPool();
-            allocCommandBuffer();
-            createSems();
-            createFence();
-            std::cout << "Renderer initialized" << std::endl;
+                 std::shared_ptr<RenderProcess> renderProcess, VkQueue graphicsQueue,
+                 VkQueue presentQueue, std::shared_ptr<CommandManager> commandManager)
+            : device_(logicDevice), swapChain_(std::move(swapChain)), renderProcess_(std::move(renderProcess)),
+              graphicsQueue_(graphicsQueue), presentQueue_(presentQueue),
+              commandManager_(commandManager)
+        {
+            maxFlightCount_ = swapChain_->images.size() - 1;
+            createFences();
+            createSemaphores();
+            createCmdBuffers();
+            std::cout << "Renderer initialized flightCount ->" << maxFlightCount_ << std::endl;
         }
 
         ~Renderer();
 
-        void Render();
+        void DrawTriangle();
 
     private:
-        VkCommandPool cmdPool_;
+        void createFences();
 
-        VkCommandBuffer cmdBuffer_;
+        void createSemaphores();
 
-        VkFence availableFence_;
+        void createCmdBuffers();
 
-        VkSemaphore imageAvaliable_;
+    private:
+        std::vector<VkFence> fences_;
 
-        VkSemaphore imageDrawFinish_;
+        std::vector<VkSemaphore> imageAvaliableSems_;
 
-        void initCommandPool();
+        std::vector<VkSemaphore> renderFinishSems_;
 
-        void allocCommandBuffer();
+        std::vector<VkCommandBuffer> cmdBufs_;
 
-        void createFence();
+        int maxFlightCount_;
 
-        void createSems();
+        int curFrame_ = 0;
 
         VkDevice device_;
 
@@ -52,12 +55,10 @@ namespace render_2d {
 
         std::shared_ptr<RenderProcess> renderProcess_;
 
+        std::shared_ptr<CommandManager> commandManager_;
+
         VkQueue graphicsQueue_;
 
         VkQueue presentQueue_;
-
-        uint32_t graphicsQueueIndex_;
-
-        uint32_t presentQueueIndex_;
     };
 }

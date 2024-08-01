@@ -6,9 +6,11 @@
 #include "../include/swapchain.h"
 #include "../include/context.h"
 
-namespace render_2d {
+namespace render_2d
+{
 
-    SwapChain::SwapChain(int width, int height) {
+    SwapChain::SwapChain(int width, int height)
+    {
         querySwapChainInfo(width, height);
 
         VkSwapchainCreateInfoKHR createInfo{};
@@ -37,12 +39,15 @@ namespace render_2d {
 
         // 设置命令队列
         auto &queueFamilyIndices = Context::GetInstance().queueFamilyIndices_;
-        if (queueFamilyIndices.graphicsQueue.value() == queueFamilyIndices.presentQueue.value()) {
+        if (queueFamilyIndices.graphicsQueue.value() == queueFamilyIndices.presentQueue.value())
+        {
             // 如果只有一个命令队列，设置图像只能被一个 queue 使用
             createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-            createInfo.queueFamilyIndexCount = 0; // 不需要设置
+            createInfo.queueFamilyIndexCount = 0;     // 不需要设置
             createInfo.pQueueFamilyIndices = nullptr; // 不需要设置
-        } else {
+        }
+        else
+        {
             std::array<uint32_t, 2> indices = {queueFamilyIndices.graphicsQueue.value(),
                                                queueFamilyIndices.presentQueue.value()};
             // 如果有多个命令队列，设置图像可以被多个 queue 使用
@@ -52,13 +57,15 @@ namespace render_2d {
 
         VkResult result = vkCreateSwapchainKHR(Context::GetInstance().device_, &createInfo,
                                                nullptr, &swapchain);
-        if (result != VK_SUCCESS) {
+        if (result != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create swap chain!");
         }
         std::cout << "SwapChain created successfully!" << std::endl;
     }
 
-    void SwapChain::querySwapChainInfo(int width, int height) {
+    void SwapChain::querySwapChainInfo(int width, int height)
+    {
         // 查询物理设备支持的Image Formats
         auto &physicalDevice = Context::GetInstance().physicalDevice_;
         auto &surface = Context::GetInstance().surface_;
@@ -68,9 +75,11 @@ namespace render_2d {
         vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, formats.data());
         info.format = formats[0];
 
-        for (const auto &format: formats) {
+        for (const auto &format : formats)
+        {
             // 格式为SRGB且支持非线性SRBG 颜色空间
-            if (format.format == VK_FORMAT_R8G8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            if (format.format == VK_FORMAT_R8G8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+            {
                 info.format = format;
                 std::cout << " SwapChainFound suitable surface format" << std::endl;
                 break;
@@ -96,7 +105,6 @@ namespace render_2d {
         // 图像传递屏幕之前的修改（旋转..）
         info.transform = capabilities.currentTransform;
 
-
         uint32_t presentModeCount = 0;
         vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
         std::cout << "SwapChain Present mode count: " << presentModeCount << std::endl;
@@ -114,8 +122,10 @@ namespace render_2d {
 
         info.presentMode = VkPresentModeKHR::VK_PRESENT_MODE_FIFO_KHR;
 
-        for (const auto &mode: presentModes) {
-            if (mode == VkPresentModeKHR::VK_PRESENT_MODE_MAILBOX_KHR) {
+        for (const auto &mode : presentModes)
+        {
+            if (mode == VkPresentModeKHR::VK_PRESENT_MODE_MAILBOX_KHR)
+            {
                 info.presentMode = mode;
                 break;
             }
@@ -125,7 +135,8 @@ namespace render_2d {
     /*
      * 获取交换链中的图像
      */
-    void SwapChain::getImages() {
+    void SwapChain::getImages()
+    {
         uint32_t imageCount = 0;
         vkGetSwapchainImagesKHR(Context::GetInstance().device_, swapchain, &imageCount, nullptr);
         images.resize(imageCount);
@@ -136,33 +147,36 @@ namespace render_2d {
     /*
      * 创建交换链中的ImageView
      */
-    void SwapChain::CreateImageViews() {
+    void SwapChain::CreateImageViews()
+    {
         imageViews.resize(images.size());
-        for (size_t i = 0; i < imageViews.size(); i++) {
+        for (size_t i = 0; i < imageViews.size(); i++)
+        {
             VkImageViewCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
             createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
             // mapping 实现A -> B 颜色映射 显式设置 VkComponentMapping
             VkComponentMapping mapping{
-                    VK_COMPONENT_SWIZZLE_R, // r
-                    VK_COMPONENT_SWIZZLE_G, // g
-                    VK_COMPONENT_SWIZZLE_B, // b
-                    VK_COMPONENT_SWIZZLE_A  // a
+                VK_COMPONENT_SWIZZLE_R, // r
+                VK_COMPONENT_SWIZZLE_G, // g
+                VK_COMPONENT_SWIZZLE_B, // b
+                VK_COMPONENT_SWIZZLE_A  // a
             };
             createInfo.components = mapping;
             createInfo.format = info.format.format;
             // mipmap level
             VkImageSubresourceRange subresourceRange{};
             subresourceRange.baseMipLevel = 0;
-            subresourceRange.levelCount = 1; // 需要多少阶纹理？
+            subresourceRange.levelCount = 1;     // 需要多少阶纹理？
             subresourceRange.baseArrayLayer = 0; // 3D 图像需要设置
-            subresourceRange.layerCount = 1; // 3D 图像需要设置
+            subresourceRange.layerCount = 1;     // 3D 图像需要设置
             subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             createInfo.subresourceRange = subresourceRange;
 
             createInfo.image = images[i]; // 指定当前图像
             VkResult result = vkCreateImageView(Context::GetInstance().device_, &createInfo, nullptr, &imageViews[i]);
-            if (result != VK_SUCCESS) {
+            if (result != VK_SUCCESS)
+            {
                 throw std::runtime_error("failed to create image view!");
             }
         }
@@ -174,15 +188,17 @@ namespace render_2d {
      * 必须使用 FrameBuffer ，不能直接往颜色附件input点的颜色
      * 创建顺序：
      * LogicDevice -> ShaderModule -> RenderPass(Pipeline)-> FrameBuffer
-     * 
-    */
-    void SwapChain::CreateFramebuffers(int width, int height){
+     *
+     */
+    void SwapChain::CreateFramebuffers(int width, int height)
+    {
         framebuffers.resize(images.size());
 
-        for(size_t i = 0; i < framebuffers.size(); i++){
+        for (size_t i = 0; i < framebuffers.size(); i++)
+        {
             VkFramebufferCreateInfo frameBufferInfo{};
             frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            frameBufferInfo.attachmentCount = 1; 
+            frameBufferInfo.attachmentCount = 1;
             frameBufferInfo.pAttachments = &imageViews[i]; // 颜色附件
             frameBufferInfo.width = width;
             frameBufferInfo.height = height;
@@ -193,14 +209,17 @@ namespace render_2d {
         std::cout << "SwapChain Create Framebuffers success!" << std::endl;
     }
 
-    SwapChain::~SwapChain() {
+    SwapChain::~SwapChain()
+    {
         std::cout << "Destroying SwapChain..." << std::endl;
-        for(auto &frameBuffer: framebuffers) {
-            vkDestroyFramebuffer(Context::GetInstance().device_, frameBuffer, nullptr);
-        }
 
-        for (auto &imageView: imageViews) {
+        for (auto &imageView : imageViews)
+        {
             vkDestroyImageView(Context::GetInstance().device_, imageView, nullptr);
+        }
+        for (auto &frameBuffer : framebuffers)
+        {
+            vkDestroyFramebuffer(Context::GetInstance().device_, frameBuffer, nullptr);
         }
         vkDestroySwapchainKHR(Context::GetInstance().device_, swapchain, nullptr);
     }
