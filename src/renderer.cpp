@@ -122,12 +122,11 @@ namespace render_2d
         */
         vkCmdBeginRenderPass(cmdBufs_[curFrame_], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        // 5. 执行 Draw 命令
-        vkCmdDraw(cmdBufs_[curFrame_], 3, 1, 0, 0);
-
-        /* 使用GPU传入的顶点参数进行渲染 (多个buffer需要进行偏移) */
+        /* 5. 使用GPU传入的顶点参数进行渲染 (多个buffer需要进行偏移) */
         VkDeviceSize vertexBufferOffset = 0;
         vkCmdBindVertexBuffers(cmdBufs_[curFrame_], 0, 1, &vertexBuffer_->buffer_, &vertexBufferOffset);
+        // 执行 Draw 命令
+        vkCmdDraw(cmdBufs_[curFrame_], 3, 1, 0, 0);
 
         // 6. 结束记录 renderPass && CommandBuffer
         vkCmdEndRenderPass(cmdBufs_[curFrame_]);

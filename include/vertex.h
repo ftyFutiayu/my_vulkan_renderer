@@ -15,7 +15,7 @@ namespace render_2d
             attributeDescription.binding = 0;                      // 顶点数据在缓冲区中的 binding 绑定点
             attributeDescription.format = VK_FORMAT_R32G32_SFLOAT; // 位置属性的数据格式
             attributeDescription.location = 0;                     // 位置属性在 shader 里的位置
-            attributeDescription.offset = 0;                       // 位置属性在 Vertex 结构体中的偏移量
+            attributeDescription.offset = 0;                       // 位置属性在 Vertex 结构体中的偏移量 （多组顶点需要设置offset）
             return attributeDescription;
         }
 
