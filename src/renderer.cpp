@@ -3,6 +3,12 @@
 
 namespace render_2d
 {
+    const std::array<Vertex, 3> vertices = {
+        Vertex{0.0, -0.5},
+        Vertex{0.5, 0.5},
+        Vertex{-0.5, 0.5},
+    };
+
     // 同步 CPU和 GPU
     void Renderer::createFences()
     {
@@ -54,15 +60,15 @@ namespace render_2d
     void Renderer::createCmdBuffers()
     {
         cmdBufs_.resize(maxFlightCount_);
-        for (auto &cmdBuf : cmdBufs_)
+        for (auto &buf : cmdBufs_)
         {
-            cmdBuf = commandManager_->allocateOneCmdBuffer();
+            buf = commandManager_->allocateOneCmdBuffer();
         }
+        std::cerr << "Render createCmdBuffers success size ->" << maxFlightCount_ << std::endl;
     }
 
     void Renderer::DrawTriangle()
     {
-        // 1. 同步CPU和 GPU
         if (vkWaitForFences(device_, 1, &fences_[curFrame_], VK_TRUE, std::numeric_limits<uint64_t>::max()) != VK_SUCCESS)
         {
             throw std::runtime_error("wait for fence failed");
@@ -119,6 +125,10 @@ namespace render_2d
         // 5. 执行 Draw 命令
         vkCmdDraw(cmdBufs_[curFrame_], 3, 1, 0, 0);
 
+        /* 使用GPU传入的顶点参数进行渲染 (多个buffer需要进行偏移) */
+        VkDeviceSize vertexBufferOffset = 0;
+        vkCmdBindVertexBuffers(cmdBufs_[curFrame_], 0, 1, &vertexBuffer_->buffer_, &vertexBufferOffset);
+
         // 6. 结束记录 renderPass && CommandBuffer
         vkCmdEndRenderPass(cmdBufs_[curFrame_]);
         res = vkEndCommandBuffer(cmdBufs_[curFrame_]);
@@ -160,8 +170,31 @@ namespace render_2d
         curFrame_ = (curFrame_ + 1) % maxFlightCount_;
     }
 
+    // 如何创建顶点buffer
+    void Renderer::createVertexBuffer()
+    {
+        // 创建并填充 Vertex Buffer
+        // VK_BUFFER_USAGE_VERTEX_BUFFER_BIT : 用于创建 vertex buffer (其他store..uniform...indirect)
+        // 一定要设置  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT , 要求内存对宿主机(CPU)可见
+        vertexBuffer_ = std::make_unique<Buffer>(sizeof(vertices), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, device_, gpu_);
+        std::cout << "Renderer create VertexBuffer success" << std::endl;
+    }
+
+    // 如何将顶点传入到GPU
+    void Renderer::bufferVertexData()
+    {
+        void *ptr;
+        // 映射内存
+        vkMapMemory(device_, vertexBuffer_->memory_, 0, sizeof(vertices), 0, &ptr);
+        memcpy(ptr, vertices.data(), sizeof(vertices));
+        vkUnmapMemory(device_, vertexBuffer_->memory_);
+        std::cout << "Renderer bufferVertexData success" << std::endl;
+    }
+
     Renderer::~Renderer()
     {
+        vertexBuffer_.reset();
         std::cout << "Destroy Vulkan Renderer" << std::endl;
         for (auto &imageSem : imageAvaliableSems_)
         {

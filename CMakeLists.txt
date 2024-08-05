@@ -39,6 +39,8 @@ set(My_Learn_Vulkan-SRC
         src/render_process.cpp
         src/renderer.cpp
         src/commandManager.cpp
+        src/buffer.cpp
+        include/vertex.h
 )
 
 # Add executable

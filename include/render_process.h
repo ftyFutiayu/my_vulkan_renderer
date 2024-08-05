@@ -6,7 +6,7 @@
 #include "tool.h"
 #include "shader.h"
 #include "swapchain.h"
-
+#include "vertex.h"
 
 namespace render_2d {
     class RenderProcess final {

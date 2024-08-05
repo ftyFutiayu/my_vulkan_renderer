@@ -4,26 +4,33 @@
 
 #include "../include/render_process.h"
 
-namespace render_2d {
-    void RenderProcess::CreatePipeline(int width, int height) {
+namespace render_2d
+{
+    void RenderProcess::CreatePipeline(int width, int height)
+    {
 
         // 图像相关pipeline需要加上 graphics
         VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
         pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        //1. Vertex input
+        // 1. Vertex input
         VkPipelineVertexInputStateCreateInfo inputState{};
         inputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        auto attribute = Vertex::getVertexInputAttributeDescription();
+        auto binding = Vertex::getVertexInputBindingDescription();
+        inputState.vertexAttributeDescriptionCount = 1;
+        inputState.vertexBindingDescriptionCount = 1;
+        inputState.pVertexAttributeDescriptions = &attribute;
+        inputState.pVertexBindingDescriptions = &binding;
         pipelineCreateInfo.pVertexInputState = &inputState;
 
-        //2. Vertex Assembling 指定每个顶点连成的图元
+        // 2. Vertex Assembling 指定每个顶点连成的图元
         VkPipelineInputAssemblyStateCreateInfo assemblyStateCreateInfo{};
         assemblyStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         assemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
         assemblyStateCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         pipelineCreateInfo.pInputAssemblyState = &assemblyStateCreateInfo;
 
-
-        //3. Vertex Shaders && Fragment Shaders
+        // 3. Vertex Shaders && Fragment Shaders
         auto stage = Shader::GetInstance().GetShaderStages(); // get vertex and fragment shader VkPipelineShaderStageCreateInfo
         pipelineCreateInfo.stageCount = stage.size();
         pipelineCreateInfo.pStages = stage.data();
@@ -39,7 +46,7 @@ namespace render_2d {
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
         viewportState.viewportCount = 1;
-        viewportState.pViewports = &viewport; //视口转换
+        viewportState.pViewports = &viewport; // 视口转换
         viewportState.scissorCount = 1;
         VkRect2D viewportScissor{};
         viewportScissor.offset = {0, 0};
@@ -64,9 +71,9 @@ namespace render_2d {
         multisampleStateCreateInfo.sampleShadingEnable = VK_FALSE;
         pipelineCreateInfo.pMultisampleState = &multisampleStateCreateInfo;
 
-        //7. test depth & stencil
+        // 7. test depth & stencil
 
-        //8. color blending
+        // 8. color blending
         VkPipelineColorBlendStateCreateInfo colorBlendState{};
         colorBlendState.logicOpEnable = VK_FALSE;
         colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -75,8 +82,8 @@ namespace render_2d {
         attachmentState.blendEnable = VK_FALSE; // 禁用color混合
         // 如何往纹理附件输入颜色
         attachmentState.colorWriteMask =
-                VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
-                VK_COLOR_COMPONENT_A_BIT;
+            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
+            VK_COLOR_COMPONENT_A_BIT;
 
         colorBlendState.pAttachments = &attachmentState; // 定义颜色混合状态
         pipelineCreateInfo.pColorBlendState = &colorBlendState;
@@ -90,14 +97,16 @@ namespace render_2d {
         auto res = vkCreateGraphicsPipelines(device_, nullptr, 1,
                                              &pipelineCreateInfo, nullptr, &pipeline_);
         // create pipeline
-        if (res != VK_SUCCESS) {
+        if (res != VK_SUCCESS)
+        {
             throw std::runtime_error("Failed to create Render pipeline");
         }
         std::cout << "Graphics pipeline created successfully." << std::endl;
     }
 
     // 初始化 Layout，和uniform数据在shader中布局
-    void RenderProcess::InitLayout() {
+    void RenderProcess::InitLayout()
+    {
         VkPipelineLayoutCreateInfo createInfo{};
         vkCreatePipelineLayout(device_, &createInfo, nullptr, &layout_);
         std::cout << "Pipeline layout created Success" << std::endl;
@@ -108,8 +117,9 @@ namespace render_2d {
      * const VkAttachmentDescription*    pAttachments;
      * const VkSubpassDescription*       pSubpasses;
      * const VkSubpassDependency*        pDependencies;
-    */
-    void RenderProcess::InitRenderPass() {
+     */
+    void RenderProcess::InitRenderPass()
+    {
 
         VkRenderPassCreateInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -134,7 +144,7 @@ namespace render_2d {
         attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
 
-        //2. VkSubpassDescription (子pass描述)
+        // 2. VkSubpassDescription (子pass描述)
         VkAttachmentReference colorAttachmentRef{};
         colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         colorAttachmentRef.attachment = 0; // 第0个颜色附件
@@ -143,7 +153,7 @@ namespace render_2d {
         subpassDescription.colorAttachmentCount = 1;
         subpassDescription.pColorAttachments = &colorAttachmentRef;
 
-        //3. SubpassDependency (多个subpass需要指定执行顺序，vulkan自带initSubpass)
+        // 3. SubpassDependency (多个subpass需要指定执行顺序，vulkan自带initSubpass)
         VkSubpassDependency dependency{};
         // src : 先执行的 subpass / dst : 后执行的 subpass
         dependency.srcSubpass = VK_SUBPASS_EXTERNAL; // 外部子pass
@@ -162,13 +172,15 @@ namespace render_2d {
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
-        if (vkCreateRenderPass(device_, &renderPassInfo, nullptr, &renderPass_) != VK_SUCCESS) {
+        if (vkCreateRenderPass(device_, &renderPassInfo, nullptr, &renderPass_) != VK_SUCCESS)
+        {
             throw std::runtime_error("Failed to create Vulkan render pass.");
         }
         std::cout << "Render pass created successfully." << std::endl;
     }
 
-    void RenderProcess::DestroyPipeline() {
+    void RenderProcess::DestroyPipeline()
+    {
         vkDestroyRenderPass(device_, renderPass_, nullptr);
         vkDestroyPipelineLayout(device_, layout_, nullptr);
         vkDestroyPipeline(device_, pipeline_, nullptr);
@@ -176,8 +188,8 @@ namespace render_2d {
         std::cout << "Graphics pipeline destroyed successfully." << std::endl;
     }
 
-
-    RenderProcess::~RenderProcess() {
+    RenderProcess::~RenderProcess()
+    {
         DestroyPipeline();
     }
 

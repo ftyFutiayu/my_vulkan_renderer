@@ -5,36 +5,33 @@
 #include "swapchain.h"
 #include "render_process.h"
 #include "commandManager.h"
+#include "vertex.h"
+#include "buffer.h"
 
 namespace render_2d
 {
     class Renderer final
     {
     public:
-        Renderer(VkDevice logicDevice, std::shared_ptr<SwapChain> swapChain,
+        Renderer(VkDevice logicDevice, VkPhysicalDevice gpu, std::shared_ptr<SwapChain> swapChain,
                  std::shared_ptr<RenderProcess> renderProcess, VkQueue graphicsQueue,
                  VkQueue presentQueue, std::shared_ptr<CommandManager> commandManager)
             : device_(logicDevice), swapChain_(std::move(swapChain)), renderProcess_(std::move(renderProcess)),
               graphicsQueue_(graphicsQueue), presentQueue_(presentQueue),
-              commandManager_(commandManager)
+              commandManager_(commandManager), gpu_(gpu)
         {
             maxFlightCount_ = swapChain_->images.size() - 1;
+            std::cout << "Renderer initialized flightCount ->" << maxFlightCount_ << std::endl;
             createFences();
             createSemaphores();
             createCmdBuffers();
-            std::cout << "Renderer initialized flightCount ->" << maxFlightCount_ << std::endl;
+            createVertexBuffer();
+            bufferVertexData();
         }
 
         ~Renderer();
 
         void DrawTriangle();
-
-    private:
-        void createFences();
-
-        void createSemaphores();
-
-        void createCmdBuffers();
 
     private:
         std::vector<VkFence> fences_;
@@ -49,7 +46,22 @@ namespace render_2d
 
         int curFrame_ = 0;
 
+        std::unique_ptr<Buffer> vertexBuffer_;
+
+        void createFences();
+
+        void createSemaphores();
+
+        void createCmdBuffers();
+
+        void createVertexBuffer();
+
+        void bufferVertexData();
+
+    private:
         VkDevice device_;
+
+        VkPhysicalDevice gpu_;
 
         std::shared_ptr<SwapChain> swapChain_;
 

@@ -17,16 +17,19 @@ namespace render_2d
                      ReadWholeFile("../frag.spv"),
                      logic_device);
         Context::GetInstance().InitRenderProcess();
-        Context::GetInstance().render_process_->InitRenderPass();
-        Context::GetInstance().render_process_->InitLayout();
-        Context::GetInstance().render_process_->CreatePipeline(width, height);
+
+        auto render_process_ = Context::GetInstance().render_process_;
+        render_process_->InitRenderPass();
+        render_process_->InitLayout();
+        render_process_->CreatePipeline(width, height);
         Context::GetInstance().swapchain_->CreateFramebuffers(width, height);
         Context::GetInstance().InitCommandManager();
 
         // init vulkan Renderer
-        renderer_ = std::make_unique<Renderer>(Context::GetInstance().device_,
+        renderer_ = std::make_unique<Renderer>(logic_device,
+                                               Context::GetInstance().physicalDevice_,
                                                Context::GetInstance().swapchain_,
-                                               Context::GetInstance().render_process_,
+                                               render_process_,
                                                Context::GetInstance().graphicsQueue_,
                                                Context::GetInstance().presentQueue_,
                                                Context::GetInstance().commandManager_);
