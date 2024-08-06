@@ -1,76 +1,64 @@
 #include <limits>
 #include "../include/renderer.h"
 
-namespace render_2d
-{
+namespace render_2d {
     const std::array<Vertex, 3> vertices = {
-        Vertex{0.0, -0.5},
-        Vertex{0.5, 0.5},
-        Vertex{-0.5, 0.5},
+            Vertex{0.0, -0.5},
+            Vertex{0.5, 0.5},
+            Vertex{-0.5, 0.5},
     };
 
     // 同步 CPU和 GPU
-    void Renderer::createFences()
-    {
+    void Renderer::createFences() {
         fences_.resize(maxFlightCount_);
-        for (auto &fence : fences_)
-        {
+        for (auto &fence: fences_) {
             VkFenceCreateInfo fenceInfo{};
             // VK_FENCE_CREATE_SIGNALED_BIT : 初始状态为已签发
             fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
             vkCreateFence(device_, &fenceInfo, nullptr, &fence);
         }
         // 检查 fence状态
-        for (size_t i = 0; i < maxFlightCount_; ++i)
-        {
+        for (size_t i = 0; i < maxFlightCount_; ++i) {
             auto res = vkGetFenceStatus(device_, fences_[i]);
-            if (res != VK_SUCCESS)
-            {
+            if (res != VK_SUCCESS) {
                 std::cerr << "Renderer Fence " << i << " not signaled!" << std::endl;
             }
         }
         std::cout << "Renderer createFences success" << std::endl;
     }
 
-    void Renderer::createSemaphores()
-    {
+    void Renderer::createSemaphores() {
         imageAvaliableSems_.resize(maxFlightCount_);
         renderFinishSems_.resize(maxFlightCount_);
         VkResult res;
-        for (size_t i = 0; i < maxFlightCount_; ++i)
-        {
+        for (size_t i = 0; i < maxFlightCount_; ++i) {
             VkSemaphoreCreateInfo availableSemsInfo{};
             availableSemsInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
             res = vkCreateSemaphore(device_, &availableSemsInfo, nullptr, &imageAvaliableSems_[i]);
-            if (res != VK_SUCCESS)
-            {
+            if (res != VK_SUCCESS) {
                 std::cerr << "Renderer imageAvaliableSems_ " << i << " not created!" << std::endl;
             }
             VkSemaphoreCreateInfo renderFinishSemsInfo{};
             renderFinishSemsInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
             res = vkCreateSemaphore(device_, &renderFinishSemsInfo, nullptr, &renderFinishSems_[i]);
-            if (res != VK_SUCCESS)
-            {
+            if (res != VK_SUCCESS) {
                 std::cerr << "Renderer imageAvaliableSems_ " << i << " not created!" << std::endl;
             }
         }
         std::cerr << "Render createSemaphores success" << std::endl;
     }
 
-    void Renderer::createCmdBuffers()
-    {
+    void Renderer::createCmdBuffers() {
         cmdBufs_.resize(maxFlightCount_);
-        for (auto &buf : cmdBufs_)
-        {
+        for (auto &buf: cmdBufs_) {
             buf = commandManager_->allocateOneCmdBuffer();
         }
         std::cerr << "Render createCmdBuffers success size ->" << maxFlightCount_ << std::endl;
     }
 
-    void Renderer::DrawTriangle()
-    {
-        if (vkWaitForFences(device_, 1, &fences_[curFrame_], VK_TRUE, std::numeric_limits<uint64_t>::max()) != VK_SUCCESS)
-        {
+    void Renderer::DrawTriangle() {
+        if (vkWaitForFences(device_, 1, &fences_[curFrame_], VK_TRUE, std::numeric_limits<uint64_t>::max()) !=
+            VK_SUCCESS) {
             throw std::runtime_error("wait for fence failed");
         }
         vkResetFences(device_, 1, &fences_[curFrame_]);
@@ -82,8 +70,7 @@ namespace render_2d
                                          std::numeric_limits<uint64_t>::max(), VK_NULL_HANDLE, VK_NULL_HANDLE,
                                          &imageIndex);
 
-        if (res != VK_SUCCESS)
-        {
+        if (res != VK_SUCCESS) {
             std::cerr << "Render Failed to acquire swap chain image" << std::endl;
             return;
         }
@@ -101,7 +88,8 @@ namespace render_2d
         vkBeginCommandBuffer(cmdBufs_[curFrame_], &beginInfo);
 
         // 4. 开始执行 RenderPass ，通过执行 vkCmdBeginRenderPass
-        vkCmdBindPipeline(cmdBufs_[curFrame_], VK_PIPELINE_BIND_POINT_GRAPHICS, renderProcess_->pipeline_); // 绑定pipeline
+        vkCmdBindPipeline(cmdBufs_[curFrame_], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          renderProcess_->pipeline_); // 绑定pipeline
         VkRenderPassBeginInfo renderPassBeginInfo{};
         renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassBeginInfo.renderPass = renderProcess_->renderPass_;
@@ -131,8 +119,7 @@ namespace render_2d
         // 6. 结束记录 renderPass && CommandBuffer
         vkCmdEndRenderPass(cmdBufs_[curFrame_]);
         res = vkEndCommandBuffer(cmdBufs_[curFrame_]);
-        if (res != VK_SUCCESS)
-        {
+        if (res != VK_SUCCESS) {
             std::cerr << "Render Failed to end command buffer" << std::endl;
         }
 
@@ -147,8 +134,7 @@ namespace render_2d
         submitGraphicsInfo.pWaitSemaphores = &imageAvaliableSems_[curFrame_];
 
         res = vkQueueSubmit(graphicsQueue_, 1, &submitGraphicsInfo, fences_[curFrame_]);
-        if (res != VK_SUCCESS)
-        {
+        if (res != VK_SUCCESS) {
             std::cerr << "Render Failed to submit graphics queue res: " << res << std::endl;
             return;
         }
@@ -160,8 +146,7 @@ namespace render_2d
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = &swapChain_->swapchain;
         res = vkQueuePresentKHR(presentQueue_, &presentInfo);
-        if (res != VK_SUCCESS)
-        {
+        if (res != VK_SUCCESS) {
             std::cerr << "Render Failed to present to screen" << std::endl;
             return;
         }
@@ -170,29 +155,29 @@ namespace render_2d
     }
 
     // 如何创建顶点buffer
-    void Renderer::createVertexBuffer()
-    {
+    void Renderer::createVertexBuffer() {
         // 创建并填充 Vertex Buffer
         // VK_BUFFER_USAGE_VERTEX_BUFFER_BIT : 用于创建 vertex buffer (其他store..uniform...indirect)
         // 一定要设置  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT , 要求内存对宿主机(CPU)可见
         hostVertexBuffer_ = std::make_unique<Buffer>(sizeof(vertices), VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                                     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                                      device_, gpu_);
-  
+
         /*  如果 HOST 不加 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
             需要每次 buffer写完调用 vkFlushMappedMemoryRanges 将内存刷新
             每次读取buffer 需要调用  vkInvalidateMappedMemoryRanges 重置*/
 
         deviceVertexBuffer_ = std::make_unique<Buffer>(sizeof(vertices),
-                                                       VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                                       VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+                                                       VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, device_, gpu_);
 
         std::cout << "Renderer create VertexBuffer success" << std::endl;
     }
 
     // 如何将顶点传入到GPU
-    void Renderer::bufferVertexData()
-    {
+    void Renderer::bufferVertexData() {
         uint32_t dataSize = sizeof(vertices);
         void *ptr;
         // 映射内存
@@ -223,8 +208,7 @@ namespace render_2d
         submit.signalSemaphoreCount = 0;
         submit.pSignalSemaphores = nullptr;
         auto res = vkQueueSubmit(graphicsQueue_, 1, &submit, nullptr);
-        if (res != VK_SUCCESS)
-        {
+        if (res != VK_SUCCESS) {
             std::cerr << "Render Failed to translate hostMemory -> localMemory res: " << res << std::endl;
             return;
         }
@@ -234,22 +218,18 @@ namespace render_2d
         std::cout << "Renderer Translate host->local memory success" << std::endl;
     }
 
-    Renderer::~Renderer()
-    {
+    Renderer::~Renderer() {
         std::cout << "Destroy Vulkan Renderer" << std::endl;
         hostVertexBuffer_.reset();
         deviceVertexBuffer_.reset();
 
-        for (auto &imageSem : imageAvaliableSems_)
-        {
+        for (auto &imageSem: imageAvaliableSems_) {
             vkDestroySemaphore(device_, imageSem, nullptr);
         }
-        for (auto &finishSem : renderFinishSems_)
-        {
+        for (auto &finishSem: renderFinishSems_) {
             vkDestroySemaphore(device_, finishSem, nullptr);
         }
-        for (auto &fence : fences_)
-        {
+        for (auto &fence: fences_) {
             vkDestroyFence(device_, fence, nullptr);
         }
     }

@@ -11,8 +11,8 @@
 namespace render_2d {
     class RenderProcess final {
     public:
-        RenderProcess(VkDevice& device,SwapChain& swapchain) : device_(device),swapchain_(swapchain) {
-            std::cout<< "Initializing Render Process...\n";
+        RenderProcess(VkDevice &device, SwapChain &swapchain) : device_(device), swapchain_(swapchain) {
+            std::cout << "Initializing Render Process...\n";
         }
 
         ~RenderProcess();
@@ -22,12 +22,15 @@ namespace render_2d {
         VkRenderPass renderPass_;
 
         void InitLayout();
+
         void InitRenderPass();
+
         void CreatePipeline(int width, int height);
+
         void DestroyPipeline();
 
     private:
-        VkDevice& device_;
-        SwapChain& swapchain_;
+        VkDevice &device_;
+        SwapChain &swapchain_;
     };
 }

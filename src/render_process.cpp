@@ -4,10 +4,8 @@
 
 #include "../include/render_process.h"
 
-namespace render_2d
-{
-    void RenderProcess::CreatePipeline(int width, int height)
-    {
+namespace render_2d {
+    void RenderProcess::CreatePipeline(int width, int height) {
 
         // 图像相关pipeline需要加上 graphics
         VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
@@ -82,8 +80,8 @@ namespace render_2d
         attachmentState.blendEnable = VK_FALSE; // 禁用color混合
         // 如何往纹理附件输入颜色
         attachmentState.colorWriteMask =
-            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
-            VK_COLOR_COMPONENT_A_BIT;
+                VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
+                VK_COLOR_COMPONENT_A_BIT;
 
         colorBlendState.pAttachments = &attachmentState; // 定义颜色混合状态
         pipelineCreateInfo.pColorBlendState = &colorBlendState;
@@ -97,16 +95,14 @@ namespace render_2d
         auto res = vkCreateGraphicsPipelines(device_, nullptr, 1,
                                              &pipelineCreateInfo, nullptr, &pipeline_);
         // create pipeline
-        if (res != VK_SUCCESS)
-        {
+        if (res != VK_SUCCESS) {
             throw std::runtime_error("Failed to create Render pipeline");
         }
         std::cout << "Graphics pipeline created successfully." << std::endl;
     }
 
     // 初始化 Layout，和uniform数据在shader中布局
-    void RenderProcess::InitLayout()
-    {
+    void RenderProcess::InitLayout() {
         VkPipelineLayoutCreateInfo createInfo{};
         vkCreatePipelineLayout(device_, &createInfo, nullptr, &layout_);
         std::cout << "Pipeline layout created Success" << std::endl;
@@ -118,8 +114,7 @@ namespace render_2d
      * const VkSubpassDescription*       pSubpasses;
      * const VkSubpassDependency*        pDependencies;
      */
-    void RenderProcess::InitRenderPass()
-    {
+    void RenderProcess::InitRenderPass() {
 
         VkRenderPassCreateInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -172,15 +167,13 @@ namespace render_2d
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
-        if (vkCreateRenderPass(device_, &renderPassInfo, nullptr, &renderPass_) != VK_SUCCESS)
-        {
+        if (vkCreateRenderPass(device_, &renderPassInfo, nullptr, &renderPass_) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create Vulkan render pass.");
         }
         std::cout << "Render pass created successfully." << std::endl;
     }
 
-    void RenderProcess::DestroyPipeline()
-    {
+    void RenderProcess::DestroyPipeline() {
         vkDestroyRenderPass(device_, renderPass_, nullptr);
         vkDestroyPipelineLayout(device_, layout_, nullptr);
         vkDestroyPipeline(device_, pipeline_, nullptr);
@@ -188,8 +181,7 @@ namespace render_2d
         std::cout << "Graphics pipeline destroyed successfully." << std::endl;
     }
 
-    RenderProcess::~RenderProcess()
-    {
+    RenderProcess::~RenderProcess() {
         DestroyPipeline();
     }
 

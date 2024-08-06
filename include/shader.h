@@ -21,16 +21,16 @@ namespace render_2d {
         VkShaderModule vertexShaderModule_;
         VkShaderModule fragmentShaderModule_;
 
-        std::vector<VkPipelineShaderStageCreateInfo> GetShaderStages();
+        std::vector <VkPipelineShaderStageCreateInfo> GetShaderStages();
 
         ~Shader();
 
     private:
         Shader(const std::string &vertex_source, const std::string &fragment_source, VkDevice &device);
 
-        static std::unique_ptr<Shader> shader_;
+        static std::unique_ptr <Shader> shader_;
 
-        std::vector<VkPipelineShaderStageCreateInfo> stages_;
+        std::vector <VkPipelineShaderStageCreateInfo> stages_;
 
         void initStages();
 

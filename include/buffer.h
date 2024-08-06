@@ -2,10 +2,8 @@
 
 #include "tool.h"
 
-namespace render_2d
-{
-    class Buffer final
-    {
+namespace render_2d {
+    class Buffer final {
 
     public:
         VkBuffer buffer_;
@@ -21,8 +19,7 @@ namespace render_2d
 
     private:
         // 查询内存信息 用于内存分配指定内存索引
-        struct MemoryInfo
-        {
+        struct MemoryInfo {
             size_t size;
             uint32_t index;
         };

@@ -9,32 +9,27 @@
 #include "swapchain.h"
 #include "commandManager.h"
 
-namespace render_2d
-{
-    class Context final
-    {
+namespace render_2d {
+    class Context final {
     public:
         static void Init(const std::vector<const char *> &extensions, CreateSurfaceFunc func);
 
         static void Quit();
 
-        static Context &GetInstance()
-        {
+        static Context &GetInstance() {
             assert(context_instance_);
             return *context_instance_;
         }
 
         ~Context();
 
-        struct QueueFamilyIndices final
-        {
+        struct QueueFamilyIndices final {
             // 图像操作 命令队列
-            std::optional<uint32_t> graphicsQueue;
+            std::optional <uint32_t> graphicsQueue;
             // 显示命令队列
-            std::optional<uint32_t> presentQueue;
+            std::optional <uint32_t> presentQueue;
 
-            operator bool() const
-            {
+            operator bool() const {
                 return graphicsQueue.has_value() && presentQueue.has_value();
             }
         };
@@ -46,9 +41,9 @@ namespace render_2d
         VkQueue presentQueue_;
         QueueFamilyIndices queueFamilyIndices_;
         VkSurfaceKHR surface_;
-        std::shared_ptr<SwapChain> swapchain_;
-        std::shared_ptr<RenderProcess> render_process_;
-        std::shared_ptr<CommandManager> commandManager_;
+        std::shared_ptr <SwapChain> swapchain_;
+        std::shared_ptr <RenderProcess> render_process_;
+        std::shared_ptr <CommandManager> commandManager_;
 
         void InitSwapChain(int width, int height);
 
@@ -63,7 +58,7 @@ namespace render_2d
     private:
         Context(const std::vector<const char *> &extensions, CreateSurfaceFunc func);
 
-        static std::unique_ptr<Context> context_instance_;
+        static std::unique_ptr <Context> context_instance_;
 
         void createInstance(const std::vector<const char *> &extensions);
 

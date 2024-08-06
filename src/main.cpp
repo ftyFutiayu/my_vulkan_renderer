@@ -3,8 +3,7 @@
 #include "GLFW/glfw3.h"
 #include "../include/render2d.h"
 
-int main(void)
-{
+int main(void) {
     /* Initialize the library */
     if (!glfwInit())
         return -1;
@@ -13,8 +12,7 @@ int main(void)
     /* Create a windowed mode window */
     GLFWwindow *window = glfwCreateWindow(1024, 720, "GLFW CMake starter", NULL, NULL);
 
-    if (!window)
-    {
+    if (!window) {
         glfwTerminate();
         return -1;
     }
@@ -26,17 +24,14 @@ int main(void)
     uint32_t extensionCount = 0;
     const char **extensions = glfwGetRequiredInstanceExtensions(&extensionCount);
     std::vector<const char *> extensionList(extensionCount);
-    for (uint32_t i = 0; i < extensionCount; ++i)
-    {
+    for (uint32_t i = 0; i < extensionCount; ++i) {
         extensionList[i] = extensions[i];
     }
-    for (const auto &extension : extensionList)
-    {
+    for (const auto &extension: extensionList) {
         std::cout << " GLFW Required Extension: " << extension << std::endl;
     }
 
-    render_2d::Init(extensionList, [&](VkInstance instance)
-                    {
+    render_2d::Init(extensionList, [&](VkInstance instance) {
         VkSurfaceKHR surface;
         if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
             const char *errorDescription;
@@ -44,14 +39,14 @@ int main(void)
             std::cerr << "GLFW Error  " << errorDescription << std::endl;
             throw std::runtime_error("Failed to create GLFW window surface!");
         }
-        return surface; }, 1024, 720);
+        return surface;
+    }, 1024, 720);
 
     /* Get Vulkan Renderer */
     auto renderer = render_2d::GetRenderer();
 
     /* Loop until the user closes the window */
-    while (!glfwWindowShouldClose(window))
-    {
+    while (!glfwWindowShouldClose(window)) {
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 

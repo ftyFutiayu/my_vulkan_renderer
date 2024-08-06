@@ -1,32 +1,27 @@
 #include "../include/commandManager.h"
 
-namespace render_2d
-{
+namespace render_2d {
 
-    CommandManager::CommandManager(uint32_t graphicsQueueFamilyIndex, VkDevice device)
-    {
+    CommandManager::CommandManager(uint32_t graphicsQueueFamilyIndex, VkDevice device) {
         std::cerr << "CommandManager created" << std::endl;
         graphicsQueueFamilyIndex_ = graphicsQueueFamilyIndex;
         device_ = device;
         pool_ = createCommandPool();
     }
 
-    CommandManager::~CommandManager()
-    {
+    CommandManager::~CommandManager() {
         std::cerr << "CommandManager destroyed" << std::endl;
         vkDestroyCommandPool(device_, pool_, nullptr);
     }
 
-    VkCommandBuffer CommandManager::allocateOneCmdBuffer()
-    {
+    VkCommandBuffer CommandManager::allocateOneCmdBuffer() {
         // std::cerr << "CommandManager allocateOneCmdBuffer" << std::endl;
         return allocateCmdBuffers(1)[0];
     }
 
     // 根据 SwapChain的图片数量来创建Command Buffers,每一帧GPU图像单独创建 cmdBuffer
-    std::vector<VkCommandBuffer> CommandManager::allocateCmdBuffers(uint32_t count)
-    {
-        std::vector<VkCommandBuffer> cmdBuffers(count);
+    std::vector <VkCommandBuffer> CommandManager::allocateCmdBuffers(uint32_t count) {
+        std::vector <VkCommandBuffer> cmdBuffers(count);
 
         VkCommandBufferAllocateInfo cmdInfo{};
         cmdInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -39,8 +34,7 @@ namespace render_2d
         return cmdBuffers;
     }
 
-    VkCommandPool CommandManager::createCommandPool()
-    {
+    VkCommandPool CommandManager::createCommandPool() {
         VkCommandPoolCreateInfo cmdPoolCreateInfo{};
         cmdPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         cmdPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -52,13 +46,11 @@ namespace render_2d
         return pool_;
     }
 
-    void CommandManager::ResetCmdPool()
-    {
+    void CommandManager::ResetCmdPool() {
         vkResetCommandPool(device_, pool_, VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
     }
 
-    void CommandManager::FreeCmdBuffer(VkCommandBuffer cmdBuffer)
-    {
+    void CommandManager::FreeCmdBuffer(VkCommandBuffer cmdBuffer) {
         vkFreeCommandBuffers(device_, pool_, 1, &cmdBuffer);
     }
 }

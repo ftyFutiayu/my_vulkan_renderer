@@ -10,9 +10,9 @@ find_package(Vulkan REQUIRED)
 # Include directories
 include_directories(${OPENGL_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR}/glm)
-if(DEFINED GLFW_SOURCE_DIR)
+if (DEFINED GLFW_SOURCE_DIR)
     include_directories("${GLFW_SOURCE_DIR}/deps")
-endif()
+endif ()
 
 # GLFW configuration
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "GLFW lib only")
@@ -24,9 +24,9 @@ add_subdirectory(glfw)
 option(My_Learn_Vulkan-USE-GLFW-GLAD "Use GLAD from GLFW" ON)
 
 # GLAD header
-if(My_Learn_Vulkan-USE-GLFW-GLAD)
+if (My_Learn_Vulkan-USE-GLFW-GLAD)
     set(GLAD_GL "${GLFW_SOURCE_DIR}/deps/glad/gl.h")
-endif()
+endif ()
 
 # Set source files
 set(My_Learn_Vulkan-SRC
@@ -44,11 +44,11 @@ set(My_Learn_Vulkan-SRC
 )
 
 # Add executable
-if(WIN32)
+if (WIN32)
     add_executable(My_Learn_Vulkan WIN32 ${My_Learn_Vulkan-SRC})
-else()
+else ()
     add_executable(My_Learn_Vulkan ${My_Learn_Vulkan-SRC})
-endif()
+endif ()
 
 # Link libraries with keyword arguments
 target_link_libraries(My_Learn_Vulkan PUBLIC
@@ -58,14 +58,14 @@ target_link_libraries(My_Learn_Vulkan PUBLIC
 )
 
 # MSVC specific linker flags
-if(MSVC)
+if (MSVC)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /ENTRY:mainCRTStartup")
-    if(${CMAKE_VERSION} VERSION_LESS "3.6.0")
+    if (${CMAKE_VERSION} VERSION_LESS "3.6.0")
         message("\n\t[ WARNING ]\n\n\tCMake version lower than 3.6.\n\n\t - Please update CMake and rerun; OR\n\t - Manually set 'My_Learn_Vulkan' as StartUp Project in Visual Studio.\n")
-    else()
+    else ()
         set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT My_Learn_Vulkan)
-    endif()
-endif()
+    endif ()
+endif ()
 
 # decode shader
 find_program(GLSLC_PROGRAM glslc REQUIRED)

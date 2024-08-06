@@ -1,10 +1,9 @@
 #pragma once
+
 #include "tool.h"
 
-namespace render_2d
-{
-    class CommandManager final
-    {
+namespace render_2d {
+    class CommandManager final {
     public:
         CommandManager(uint32_t graphicsQueueFamilyIndex, VkDevice device);
 
@@ -12,7 +11,7 @@ namespace render_2d
 
         VkCommandBuffer allocateOneCmdBuffer();
 
-        std::vector<VkCommandBuffer> allocateCmdBuffers(uint32_t count);
+        std::vector <VkCommandBuffer> allocateCmdBuffers(uint32_t count);
 
         void ResetCmdPool();
 
@@ -23,7 +22,7 @@ namespace render_2d
 
         VkCommandPool createCommandPool();
 
-        std::vector<VkCommandBuffer> commandBuffers_;
+        std::vector <VkCommandBuffer> commandBuffers_;
 
         uint32_t graphicsQueueFamilyIndex_;
 

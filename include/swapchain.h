@@ -29,9 +29,9 @@ namespace render_2d {
         };
 
         SwapChainInfo info;
-        std::vector<VkImage> images;
-        std::vector<VkImageView> imageViews;
-        std::vector<VkFramebuffer> framebuffers; // size == vkImage.size()
+        std::vector <VkImage> images;
+        std::vector <VkImageView> imageViews;
+        std::vector <VkFramebuffer> framebuffers; // size == vkImage.size()
 
         void querySwapChainInfo(int width, int height);
 

@@ -5,7 +5,7 @@
 #include "../include/shader.h"
 
 namespace render_2d {
-    std::unique_ptr<Shader> Shader::shader_ = nullptr;
+    std::unique_ptr <Shader> Shader::shader_ = nullptr;
 
     void Shader::Init(const std::string &vertex_source, const std::string &fragment_source, VkDevice &device) {
         shader_.reset(new Shader(vertex_source, fragment_source, device));
@@ -44,7 +44,7 @@ namespace render_2d {
     }
 
 
-    std::vector<VkPipelineShaderStageCreateInfo> Shader::GetShaderStages() {
+    std::vector <VkPipelineShaderStageCreateInfo> Shader::GetShaderStages() {
         return stages_;
     }
 
