@@ -46,7 +46,9 @@ namespace render_2d
 
         int curFrame_ = 0;
 
-        std::unique_ptr<Buffer> vertexBuffer_;
+        std::unique_ptr<Buffer> hostVertexBuffer_; // 使用CPU&GPU共享IO内存 buffer
+
+        std::unique_ptr<Buffer> deviceVertexBuffer_; // GPU独占的buffer
 
         void createFences();
 

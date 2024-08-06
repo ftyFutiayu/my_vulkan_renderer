@@ -124,7 +124,7 @@ namespace render_2d
 
         /* 5. 使用GPU传入的顶点参数进行渲染 (多个buffer需要进行偏移) */
         VkDeviceSize vertexBufferOffset = 0;
-        vkCmdBindVertexBuffers(cmdBufs_[curFrame_], 0, 1, &vertexBuffer_->buffer_, &vertexBufferOffset);
+        vkCmdBindVertexBuffers(cmdBufs_[curFrame_], 0, 1, &deviceVertexBuffer_->buffer_, &vertexBufferOffset);
         // 执行 Draw 命令
         vkCmdDraw(cmdBufs_[curFrame_], 3, 1, 0, 0);
 
@@ -175,26 +175,71 @@ namespace render_2d
         // 创建并填充 Vertex Buffer
         // VK_BUFFER_USAGE_VERTEX_BUFFER_BIT : 用于创建 vertex buffer (其他store..uniform...indirect)
         // 一定要设置  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT , 要求内存对宿主机(CPU)可见
-        vertexBuffer_ = std::make_unique<Buffer>(sizeof(vertices), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, device_, gpu_);
+        hostVertexBuffer_ = std::make_unique<Buffer>(sizeof(vertices), VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                                     device_, gpu_);
+  
+        /*  如果 HOST 不加 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+            需要每次 buffer写完调用 vkFlushMappedMemoryRanges 将内存刷新
+            每次读取buffer 需要调用  vkInvalidateMappedMemoryRanges 重置*/
+
+        deviceVertexBuffer_ = std::make_unique<Buffer>(sizeof(vertices),
+                                                       VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, device_, gpu_);
+
         std::cout << "Renderer create VertexBuffer success" << std::endl;
     }
 
     // 如何将顶点传入到GPU
     void Renderer::bufferVertexData()
     {
+        uint32_t dataSize = sizeof(vertices);
         void *ptr;
         // 映射内存
-        vkMapMemory(device_, vertexBuffer_->memory_, 0, sizeof(vertices), 0, &ptr);
+        vkMapMemory(device_, hostVertexBuffer_->memory_, 0, dataSize, 0, &ptr);
         memcpy(ptr, vertices.data(), sizeof(vertices));
-        vkUnmapMemory(device_, vertexBuffer_->memory_);
-        std::cout << "Renderer bufferVertexData success" << std::endl;
+        vkUnmapMemory(device_, hostVertexBuffer_->memory_);
+
+        // 新建 commandBuffer 用于将 hostBuffer -> deviceLocal
+        auto cmdBuf = commandManager_->allocateOneCmdBuffer();
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        vkBeginCommandBuffer(cmdBuf, &beginInfo);
+        VkBufferCopy copy{};
+        copy.size = dataSize;
+        copy.srcOffset = 0;
+        copy.dstOffset = 0;
+        // 复制 hostBuffer -> deviceLocal buffer
+        vkCmdCopyBuffer(cmdBuf, hostVertexBuffer_->buffer_, deviceVertexBuffer_->buffer_, 1, &copy);
+        vkEndCommandBuffer(cmdBuf);
+
+        VkSubmitInfo submit{};
+        submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit.commandBufferCount = 1;
+        submit.pCommandBuffers = &cmdBuf;
+        submit.waitSemaphoreCount = 0;
+        submit.pWaitSemaphores = nullptr;
+        submit.signalSemaphoreCount = 0;
+        submit.pSignalSemaphores = nullptr;
+        auto res = vkQueueSubmit(graphicsQueue_, 1, &submit, nullptr);
+        if (res != VK_SUCCESS)
+        {
+            std::cerr << "Render Failed to translate hostMemory -> localMemory res: " << res << std::endl;
+            return;
+        }
+
+        vkDeviceWaitIdle(device_);
+        commandManager_->FreeCmdBuffer(cmdBuf);
+        std::cout << "Renderer Translate host->local memory success" << std::endl;
     }
 
     Renderer::~Renderer()
     {
-        vertexBuffer_.reset();
         std::cout << "Destroy Vulkan Renderer" << std::endl;
+        hostVertexBuffer_.reset();
+        deviceVertexBuffer_.reset();
+
         for (auto &imageSem : imageAvaliableSems_)
         {
             vkDestroySemaphore(device_, imageSem, nullptr);
