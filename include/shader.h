@@ -9,31 +9,28 @@
 namespace render_2d {
     class Shader final {
     public:
-        static void Init(const std::string &vertex_source, const std::string &fragment_source, VkDevice &device);
-
-        static void Quit();
-
-        // 正常Renderer 不使用单例模式
-        static Shader &GetInstance() {
-            return *shader_;
-        }
-
-        VkShaderModule vertexShaderModule_;
-        VkShaderModule fragmentShaderModule_;
-
-        std::vector <VkPipelineShaderStageCreateInfo> GetShaderStages();
+        Shader(const std::string &vertex_source, const std::string &fragment_source, VkDevice &device);
 
         ~Shader();
 
+        std::vector<VkPipelineShaderStageCreateInfo> GetShaderStages();
+
+        const std::vector<VkDescriptorSetLayout> &GetDescriptorSetLayouts() const { return setLayouts_; }
+
     private:
-        Shader(const std::string &vertex_source, const std::string &fragment_source, VkDevice &device);
+        std::vector<VkDescriptorSetLayout> setLayouts_;
 
-        static std::unique_ptr <Shader> shader_;
-
-        std::vector <VkPipelineShaderStageCreateInfo> stages_;
+        std::vector<VkPipelineShaderStageCreateInfo> stages_;
 
         void initStages();
 
+        void initDescriptorSetLayouts();
+
+        VkShaderModule vertexShaderModule_;
+
+        VkShaderModule fragmentShaderModule_;
+
+    private:
         VkDevice device_;
     };
 

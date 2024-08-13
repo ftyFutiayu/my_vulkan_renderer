@@ -1,51 +1,64 @@
 #pragma once
 
 #include <utility>
-#include "tool.h"
-#include "swapchain.h"
-#include "render_process.h"
-#include "commandManager.h"
-#include "vertex.h"
+#include "context.h"
 #include "buffer.h"
 
 namespace render_2d {
     class Renderer final {
     public:
-        Renderer(VkDevice logicDevice, VkPhysicalDevice gpu, std::shared_ptr <SwapChain> swapChain,
-                 std::shared_ptr <RenderProcess> renderProcess, VkQueue graphicsQueue,
-                 VkQueue presentQueue, std::shared_ptr <CommandManager> commandManager)
-                : device_(logicDevice), swapChain_(std::move(swapChain)), renderProcess_(std::move(renderProcess)),
-                  graphicsQueue_(graphicsQueue), presentQueue_(presentQueue),
-                  commandManager_(commandManager), gpu_(gpu) {
-            maxFlightCount_ = swapChain_->images.size() - 1;
-            std::cout << "Renderer initialized flightCount ->" << maxFlightCount_ << std::endl;
-            createFences();
-            createSemaphores();
-            createCmdBuffers();
-            createVertexBuffer();
-            bufferVertexData();
-        }
+        Renderer(int maxFlightCount);
 
         ~Renderer();
 
-        void DrawTriangle();
+        void DrawRect(const Rect &rect);
+
+        void SetDrawColor(const Color &color);
+
+        void SetProjectMat(int right, int left, int bottom, int top, int far, int near);
 
     private:
-        std::vector <VkFence> fences_;
+        struct MVP {
+            glm::mat4 project;
+            glm::mat4 view;
+            glm::mat4 model;
+        };
 
-        std::vector <VkSemaphore> imageAvaliableSems_;
+        std::vector<VkFence> fences_;
 
-        std::vector <VkSemaphore> renderFinishSems_;
+        std::vector<VkSemaphore> imageAvaliableSems_;
 
-        std::vector <VkCommandBuffer> cmdBufs_;
+        std::vector<VkSemaphore> renderFinishSems_;
+
+        std::vector<VkCommandBuffer> cmdBufs_;
 
         int maxFlightCount_;
 
         int curFrame_ = 0;
 
-        std::unique_ptr <Buffer> hostVertexBuffer_; // 使用CPU&GPU共享IO内存 buffer
+        std::unique_ptr<Buffer> hostVertexBuffer_; // 使用CPU&GPU共享IO内存 buffer
 
-        std::unique_ptr <Buffer> deviceVertexBuffer_; // GPU独占的buffer
+        std::unique_ptr<Buffer> deviceVertexBuffer_; // GPU独占的buffer
+
+        std::unique_ptr<Buffer> hostIndicesBuffer_; // 顶点索引buffer
+
+        std::unique_ptr<Buffer> deviceIndicesBuffer_; // GPU独占的顶点索引buffer
+
+        std::vector<std::unique_ptr<Buffer>> hostColorUniformBufs; // GPU独占的uniform buffer
+
+        std::vector<std::unique_ptr<Buffer>> localColorUniformBufs_; // GPU独占的
+
+        std::vector<std::unique_ptr<Buffer>> hostMVPUniformBufs_;
+
+        std::vector<std::unique_ptr<Buffer>> localMVPUniformBufs_;
+
+        VkDescriptorPool colorDescriptorPool_;
+
+        VkDescriptorPool mvpDescriptorPool_;
+
+        std::vector<VkDescriptorSet> colorDescriptorSets_;
+
+        std::vector<VkDescriptorSet> mvpDescriptorSets_;
 
         void createFences();
 
@@ -53,23 +66,26 @@ namespace render_2d {
 
         void createCmdBuffers();
 
-        void createVertexBuffer();
+        void createVertexIndexBuffer();
 
         void bufferVertexData();
 
-    private:
-        VkDevice device_;
+        void createUniformBuffers();
 
-        VkPhysicalDevice gpu_;
+        void transformBuffer2Device(Buffer &src, Buffer &dst, size_t size, size_t srcOffset, size_t dstOffset);
 
-        std::shared_ptr <SwapChain> swapChain_;
+        void createDescriptorPool();
 
-        std::shared_ptr <RenderProcess> renderProcess_;
+        void allocateDescriptorSets();
 
-        std::shared_ptr <CommandManager> commandManager_;
+        void updateDescriptorSets();
 
-        VkQueue graphicsQueue_;
+        void initMats();
 
-        VkQueue presentQueue_;
+        void bufferMVPUniformData(const glm::mat4 modelMat);
+
+        glm::mat4 projectMat_;
+
+        glm::mat4 viewMat_;
     };
 }

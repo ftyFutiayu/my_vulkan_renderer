@@ -25,9 +25,9 @@ namespace render_2d {
 
         struct QueueFamilyIndices final {
             // 图像操作 命令队列
-            std::optional <uint32_t> graphicsQueue;
+            std::optional<uint32_t> graphicsQueue;
             // 显示命令队列
-            std::optional <uint32_t> presentQueue;
+            std::optional<uint32_t> presentQueue;
 
             operator bool() const {
                 return graphicsQueue.has_value() && presentQueue.has_value();
@@ -41,9 +41,10 @@ namespace render_2d {
         VkQueue presentQueue_;
         QueueFamilyIndices queueFamilyIndices_;
         VkSurfaceKHR surface_;
-        std::shared_ptr <SwapChain> swapchain_;
-        std::shared_ptr <RenderProcess> render_process_;
-        std::shared_ptr <CommandManager> commandManager_;
+        std::shared_ptr<SwapChain> swapchain_;
+        std::shared_ptr<RenderProcess> render_process_;
+        std::shared_ptr<CommandManager> commandManager_;
+        std::shared_ptr<Shader> shader_;
 
         void InitSwapChain(int width, int height);
 
@@ -55,10 +56,16 @@ namespace render_2d {
 
         void QuitCommandManager();
 
+        void InitShaderModules();
+
+        void QuitShaderModules();
+
     private:
         Context(const std::vector<const char *> &extensions, CreateSurfaceFunc func);
 
-        static std::unique_ptr <Context> context_instance_;
+        static std::unique_ptr<Context> context_instance_;
+
+        void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo);
 
         void createInstance(const std::vector<const char *> &extensions);
 

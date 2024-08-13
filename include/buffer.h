@@ -17,6 +17,7 @@ namespace render_2d {
 
         ~Buffer();
 
+        void *map; // 如果host可见，使用 map 进行数据操作
     private:
         // 查询内存信息 用于内存分配指定内存索引
         struct MemoryInfo {

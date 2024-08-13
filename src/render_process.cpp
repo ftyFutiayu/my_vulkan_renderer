@@ -5,7 +5,23 @@
 #include "../include/render_process.h"
 
 namespace render_2d {
-    void RenderProcess::CreatePipeline(int width, int height) {
+    RenderProcess::RenderProcess(VkDevice &device, SwapChain &swapchain, Shader &shader) : device_(device),
+                                                                                           swapchain_(swapchain) {
+        initLayout(shader);
+        initRenderPass();
+        createPipeline(shader);
+        std::cout << "Initializing Render Process...\n";
+    }
+
+    RenderProcess::~RenderProcess() {
+        vkDestroyRenderPass(device_, renderPass_, nullptr);
+        vkDestroyPipelineLayout(device_, layout_, nullptr);
+        vkDestroyPipeline(device_, pipeline_, nullptr);
+        pipeline_ = VK_NULL_HANDLE;
+        std::cout << "Graphics pipeline destroyed successfully." << std::endl;
+    }
+
+    void RenderProcess::createPipeline(Shader &shader) {
 
         // 图像相关pipeline需要加上 graphics
         VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
@@ -13,8 +29,8 @@ namespace render_2d {
         // 1. Vertex input
         VkPipelineVertexInputStateCreateInfo inputState{};
         inputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        auto attribute = Vertex::getVertexInputAttributeDescription();
-        auto binding = Vertex::getVertexInputBindingDescription();
+        auto attribute = Vec::GetAttributeDescription();
+        auto binding = Vec::GetBindingDescription();
         inputState.vertexAttributeDescriptionCount = 1;
         inputState.vertexBindingDescriptionCount = 1;
         inputState.pVertexAttributeDescriptions = &attribute;
@@ -29,7 +45,7 @@ namespace render_2d {
         pipelineCreateInfo.pInputAssemblyState = &assemblyStateCreateInfo;
 
         // 3. Vertex Shaders && Fragment Shaders
-        auto stage = Shader::GetInstance().GetShaderStages(); // get vertex and fragment shader VkPipelineShaderStageCreateInfo
+        auto stage = shader.GetShaderStages(); // get vertex and fragment shader VkPipelineShaderStageCreateInfo
         pipelineCreateInfo.stageCount = stage.size();
         pipelineCreateInfo.pStages = stage.data();
 
@@ -39,8 +55,8 @@ namespace render_2d {
         VkViewport viewport;
         viewport.x = 0.0f;
         viewport.y = 0.0f;
-        viewport.width = static_cast<float>(width);
-        viewport.height = static_cast<float>(height);
+        viewport.width = static_cast<float>(swapchain_.info.imageExtent.width);
+        viewport.height = static_cast<float>(swapchain_.info.imageExtent.height);
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
         viewportState.viewportCount = 1;
@@ -48,7 +64,7 @@ namespace render_2d {
         viewportState.scissorCount = 1;
         VkRect2D viewportScissor{};
         viewportScissor.offset = {0, 0};
-        viewportScissor.extent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+        viewportScissor.extent = swapchain_.info.imageExtent;
         viewportState.pScissors = &viewportScissor; // 裁切设置
         pipelineCreateInfo.pViewportState = &viewportState;
 
@@ -102,8 +118,12 @@ namespace render_2d {
     }
 
     // 初始化 Layout，和uniform数据在shader中布局
-    void RenderProcess::InitLayout() {
+    void RenderProcess::initLayout(Shader &shader) {
         VkPipelineLayoutCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        auto setLayouts = shader.GetDescriptorSetLayouts();
+        createInfo.setLayoutCount = setLayouts.size();
+        createInfo.pSetLayouts = setLayouts.data();
         vkCreatePipelineLayout(device_, &createInfo, nullptr, &layout_);
         std::cout << "Pipeline layout created Success" << std::endl;
     }
@@ -114,7 +134,7 @@ namespace render_2d {
      * const VkSubpassDescription*       pSubpasses;
      * const VkSubpassDependency*        pDependencies;
      */
-    void RenderProcess::InitRenderPass() {
+    void RenderProcess::initRenderPass() {
 
         VkRenderPassCreateInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -128,6 +148,7 @@ namespace render_2d {
         attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         // 存储到显存
         attachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachmentDescription.flags = VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT;
         // 模板缓冲
         /*
         frameBuffer为多个 attachment的绑定组
@@ -172,17 +193,4 @@ namespace render_2d {
         }
         std::cout << "Render pass created successfully." << std::endl;
     }
-
-    void RenderProcess::DestroyPipeline() {
-        vkDestroyRenderPass(device_, renderPass_, nullptr);
-        vkDestroyPipelineLayout(device_, layout_, nullptr);
-        vkDestroyPipeline(device_, pipeline_, nullptr);
-        pipeline_ = VK_NULL_HANDLE;
-        std::cout << "Graphics pipeline destroyed successfully." << std::endl;
-    }
-
-    RenderProcess::~RenderProcess() {
-        DestroyPipeline();
-    }
-
 }

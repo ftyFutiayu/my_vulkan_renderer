@@ -20,8 +20,8 @@ namespace render_2d {
     }
 
     // 根据 SwapChain的图片数量来创建Command Buffers,每一帧GPU图像单独创建 cmdBuffer
-    std::vector <VkCommandBuffer> CommandManager::allocateCmdBuffers(uint32_t count) {
-        std::vector <VkCommandBuffer> cmdBuffers(count);
+    std::vector<VkCommandBuffer> CommandManager::allocateCmdBuffers(uint32_t count) {
+        std::vector<VkCommandBuffer> cmdBuffers(count);
 
         VkCommandBufferAllocateInfo cmdInfo{};
         cmdInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;

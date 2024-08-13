@@ -3,14 +3,24 @@
 namespace render_2d {
     Buffer::Buffer(uint64_t buffer_size, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags property,
                    VkDevice device, VkPhysicalDevice gpu) : device_(device), gpu_(gpu) {
+        buffer_size_ = buffer_size;
         createBuffer(buffer_size, bufferUsage);
         auto info = queryMemoryInfo(buffer_, property);
         allocateMemory(info);
         bindingMemory();
-        std::cerr << "Buffer created successfully.\n";
+
+        if (property & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+            vkMapMemory(device_, memory_, 0, buffer_size, 0, &map);
+        } else {
+            map = nullptr;
+        }
     }
 
     Buffer::~Buffer() {
+        if (map) {
+            vkUnmapMemory(device_, memory_);
+        }
+
         vkDestroyBuffer(device_, buffer_, nullptr);
         vkFreeMemory(device_, memory_, nullptr);
     }

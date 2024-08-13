@@ -1,7 +1,20 @@
 #include "../include/context.h"
 
 namespace render_2d {
-    std::unique_ptr <Context> Context::context_instance_ = nullptr;
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+            VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+            VkDebugUtilsMessageTypeFlagsEXT messageType,
+            const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+            void *pUserData) {
+
+        if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+            std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+        }
+
+        return VK_FALSE;
+    }
+
+    std::unique_ptr<Context> Context::context_instance_ = nullptr;
 
     void Context::Init(const std::vector<const char *> &extensions, CreateSurfaceFunc func) {
         context_instance_.reset(new Context(extensions, std::move(func)));
@@ -46,12 +59,12 @@ namespace render_2d {
         }
 
         // 请求的验证层
-        std::vector<const char *> requestedLayers = {"VK_LAYER_KHRONOS_validation"};
+        std::vector<const char *> requestedLayers = {"VK_LAYER_KHRONOS_validation"/*, "VK_LAYER_LUNARG_api_dump"*/};
 
         // 获取所有可用的层
         uint32_t layerCount;
         vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-        std::vector <VkLayerProperties> availableLayers(layerCount);
+        std::vector<VkLayerProperties> availableLayers(layerCount);
         vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
         // 检查请求的层是否可用
@@ -64,15 +77,25 @@ namespace render_2d {
                 }
             }
         }
-
-        // 如果任何请求的层不可用，则抛出异常throwdLayers.size());
-        createInfo.ppEnabledLayerNames = enabledLayers.data();
-
         // 打印所有可用的层
         std::cout << "Available Vulkan layers:" << std::endl;
         for (const auto &layerProps: availableLayers) {
             std::cerr << "  " << layerProps.layerName << std::endl;
         }
+
+        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+        debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+
+        if (!enabledLayers.empty()) {
+            createInfo.enabledLayerCount = enabledLayers.size();
+            createInfo.ppEnabledLayerNames = enabledLayers.data();
+            populateDebugMessengerCreateInfo(debugCreateInfo);
+            createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *) &debugCreateInfo;
+        } else {
+            createInfo.enabledLayerCount = 0;
+            createInfo.pNext = nullptr;
+        }
+
 
         // 创建Vulkan实例
         if (vkCreateInstance(&createInfo, nullptr, &instance_) != VK_SUCCESS) {
@@ -84,7 +107,7 @@ namespace render_2d {
         // 验证创建的实例是否启用了正确的扩展
         uint32_t extensionCount;
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-        std::vector <VkExtensionProperties> enabledExtensions(extensionCount);
+        std::vector<VkExtensionProperties> enabledExtensions(extensionCount);
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, enabledExtensions.data());
 
         std::cout << "CreateInstance Enabled Vulkan extensions:" << std::endl;
@@ -93,10 +116,22 @@ namespace render_2d {
         }
     }
 
+    void Context::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo) {
+        createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        createInfo.messageSeverity =
+                /* VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |*/
+                VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        createInfo.messageType =
+                /*VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | */
+                VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT /*| VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT*/;
+        createInfo.pfnUserCallback = debugCallback;
+    }
+
     void Context::pickPhysicalDevice() {
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(instance_, &deviceCount, nullptr);
-        std::vector <VkPhysicalDevice> devices(deviceCount);
+        std::vector<VkPhysicalDevice> devices(deviceCount);
         vkEnumeratePhysicalDevices(instance_, &deviceCount, devices.data());
         if (deviceCount == 0) {
             throw std::runtime_error("No suitable GPU found");
@@ -119,7 +154,7 @@ namespace render_2d {
         uint32_t queueFamilyCount = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice_, &queueFamilyCount, nullptr);
 
-        std::vector <VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
         vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice_, &queueFamilyCount, queueFamilies.data());
 
         for (int i = 0; i < queueFamilyCount; i++) {
@@ -153,7 +188,7 @@ namespace render_2d {
 
         // LogicDevice 可以设置拓展和层 extensions
         VkDeviceCreateInfo createInfo{};
-        std::vector <VkDeviceQueueCreateInfo> queueCreateInfos;
+        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
         float queuePriority = 1.0f;
 
         // only need create one queue that supports both graphics and present
@@ -211,7 +246,7 @@ namespace render_2d {
     }
 
     void Context::InitRenderProcess() {
-        render_process_ = std::make_shared<RenderProcess>(device_, *swapchain_);
+        render_process_ = std::make_shared<RenderProcess>(device_, *swapchain_, *shader_);
     }
 
     void Context::InitCommandManager() {
@@ -220,5 +255,15 @@ namespace render_2d {
 
     void Context::QuitCommandManager() {
         commandManager_.reset();
+    }
+
+    void Context::InitShaderModules() {
+        shader_ = std::make_shared<Shader>(ReadWholeFile("../vert.spv"),
+                                           ReadWholeFile("../frag.spv"),
+                                           device_);
+    }
+
+    void Context::QuitShaderModules() {
+        shader_.reset();
     }
 }

@@ -5,16 +5,6 @@
 #include "../include/shader.h"
 
 namespace render_2d {
-    std::unique_ptr <Shader> Shader::shader_ = nullptr;
-
-    void Shader::Init(const std::string &vertex_source, const std::string &fragment_source, VkDevice &device) {
-        shader_.reset(new Shader(vertex_source, fragment_source, device));
-    }
-
-    void Shader::Quit() {
-        shader_.reset();
-    }
-
     Shader::Shader(const std::string &vertex_source, const std::string &fragment_source, VkDevice &device) {
         device_ = device;
         VkShaderModuleCreateInfo vertexShaderCreateInfo{};
@@ -34,17 +24,22 @@ namespace render_2d {
         std::cout << "Fragment shader module created successfully." << std::endl;
 
         initStages();
+
+        initDescriptorSetLayouts();
     }
 
 
     Shader::~Shader() {
+        for (auto &setLayout: setLayouts_) {
+            vkDestroyDescriptorSetLayout(device_, setLayout, nullptr);
+        }
         vkDestroyShaderModule(device_, fragmentShaderModule_, nullptr);
         vkDestroyShaderModule(device_, vertexShaderModule_, nullptr);
         std::cout << "Shader module destroyed successfully." << std::endl;
     }
 
 
-    std::vector <VkPipelineShaderStageCreateInfo> Shader::GetShaderStages() {
+    std::vector<VkPipelineShaderStageCreateInfo> Shader::GetShaderStages() {
         return stages_;
     }
 
@@ -66,5 +61,43 @@ namespace render_2d {
         std::cout << "Shader stages initialized successfully." << std::endl;
     }
 
+
+    void Shader::initDescriptorSetLayouts() {
+        setLayouts_.resize(2);
+        /* Init VertexShader MVP Uniform Set = 0 */
+        VkDescriptorSetLayoutBinding vertexLayoutBinding{};
+        vertexLayoutBinding.binding = 0;
+        vertexLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        vertexLayoutBinding.descriptorCount = 1;
+        vertexLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+        VkDescriptorSetLayoutCreateInfo vertexLayoutCreateInfo{};
+        vertexLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        vertexLayoutCreateInfo.bindingCount = 1;
+        vertexLayoutCreateInfo.pBindings = &vertexLayoutBinding;
+        VkDescriptorSetLayout vertexSetLayout{};
+        vkCreateDescriptorSetLayout(device_, &vertexLayoutCreateInfo, nullptr, &vertexSetLayout);
+        setLayouts_[0] = vertexSetLayout;
+
+
+        /* Init FragmentShader Color Uniform Set = 1*/
+        VkDescriptorSetLayoutBinding fragLayoutBinding{};
+        fragLayoutBinding.binding = 0;
+        fragLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        fragLayoutBinding.descriptorCount = 1;
+        fragLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+        VkDescriptorSetLayoutCreateInfo fragLayoutCreateInfo{};
+        fragLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        fragLayoutCreateInfo.bindingCount = 1;
+        fragLayoutCreateInfo.pBindings = &fragLayoutBinding;
+        VkDescriptorSetLayout fragmentSetLayout{};
+        vkCreateDescriptorSetLayout(device_, &fragLayoutCreateInfo, nullptr, &fragmentSetLayout);
+        setLayouts_[1] = fragmentSetLayout;
+
+
+        std::cout << "DescriptorSet layouts initialized successfully. setLayout size -> " << setLayouts_.size()
+                  << std::endl;
+    }
 }
 

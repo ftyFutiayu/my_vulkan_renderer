@@ -64,15 +64,15 @@ namespace render_2d {
         auto &surface = Context::GetInstance().surface_;
         uint32_t formatCount = 0;
         vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
-        std::vector <VkSurfaceFormatKHR> formats(formatCount);
+        std::vector<VkSurfaceFormatKHR> formats(formatCount);
         vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, formats.data());
         info.format = formats[0];
 
         for (const auto &format: formats) {
             // 格式为SRGB且支持非线性SRBG 颜色空间
-            if (format.format == VK_FORMAT_R8G8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            if (format.format == VK_FORMAT_B8G8R8A8_UNORM && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
                 info.format = format;
-                std::cout << " SwapChainFound suitable surface format" << std::endl;
+                std::cout << "SwapChainFound suitable surface format" << std::endl;
                 break;
             }
         }
@@ -99,7 +99,7 @@ namespace render_2d {
         uint32_t presentModeCount = 0;
         vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
         std::cout << "SwapChain Present mode count: " << presentModeCount << std::endl;
-        std::vector <VkPresentModeKHR> presentModes(presentModeCount);
+        std::vector<VkPresentModeKHR> presentModes(presentModeCount);
         vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface,
                                                   &presentModeCount,
                                                   presentModes.data());
