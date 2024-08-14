@@ -36,7 +36,7 @@ namespace render_2d {
 
         vkDestroyDescriptorPool(device, colorDescriptorPool_, nullptr);
         vkDestroyDescriptorPool(device, mvpDescriptorPool_, nullptr);
-        
+
         hostVertexBuffer_.reset();
         deviceVertexBuffer_.reset();
         hostIndicesBuffer_.reset();
@@ -95,7 +95,7 @@ namespace render_2d {
             VkSemaphoreCreateInfo renderFinishSemsInfo{};
             renderFinishSemsInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
             vkCreateSemaphore(device, &renderFinishSemsInfo, nullptr, &renderFinishSems_[i]);
-     
+
         }
         std::cerr << "Render createSemaphores success" << std::endl;
     }
