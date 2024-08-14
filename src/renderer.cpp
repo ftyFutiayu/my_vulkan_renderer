@@ -78,14 +78,6 @@ namespace render_2d {
             vkCreateFence(device, &fenceInfo, nullptr, &fence);
         }
 
-        // 检查 fence状态
-        for (size_t i = 0; i < maxFlightCount_; ++i) {
-            auto res = vkGetFenceStatus(device, fences_[i]);
-            if (res != VK_SUCCESS) {
-                std::cerr << "Renderer Fence " << i << " not signaled!" << std::endl;
-            }
-        }
-
         std::cout << "Renderer createFences success" << std::endl;
     }
 
@@ -98,16 +90,12 @@ namespace render_2d {
         for (size_t i = 0; i < maxFlightCount_; ++i) {
             VkSemaphoreCreateInfo availableSemsInfo{};
             availableSemsInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-            res = vkCreateSemaphore(device, &availableSemsInfo, nullptr, &imageAvaliableSems_[i]);
-            if (res != VK_SUCCESS) {
-                std::cerr << "Renderer imageAvaliableSems_ " << i << " not created!" << std::endl;
-            }
+            vkCreateSemaphore(device, &availableSemsInfo, nullptr, &imageAvaliableSems_[i]);
+
             VkSemaphoreCreateInfo renderFinishSemsInfo{};
             renderFinishSemsInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-            res = vkCreateSemaphore(device, &renderFinishSemsInfo, nullptr, &renderFinishSems_[i]);
-            if (res != VK_SUCCESS) {
-                std::cerr << "Renderer imageAvaliableSems_ " << i << " not created!" << std::endl;
-            }
+            vkCreateSemaphore(device, &renderFinishSemsInfo, nullptr, &renderFinishSems_[i]);
+     
         }
         std::cerr << "Render createSemaphores success" << std::endl;
     }
