@@ -2,6 +2,7 @@
 #include <fstream>
 #include <string>
 #include <stdexcept>
+#include "../stb_image/stb_image.h"
 
 namespace render_2d {
 

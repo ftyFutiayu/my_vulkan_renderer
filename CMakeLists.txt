@@ -10,6 +10,7 @@ find_package(Vulkan REQUIRED)
 # Include directories
 include_directories(${OPENGL_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR}/glm)
+include_directories(${PROJECT_SOURCE_DIR}/stb_image)
 if (DEFINED GLFW_SOURCE_DIR)
     include_directories("${GLFW_SOURCE_DIR}/deps")
 endif ()
