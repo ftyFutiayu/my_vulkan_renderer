@@ -35,6 +35,8 @@ namespace render_2d {
         auto &device = Context::GetInstance().device_;
 
         vkDestroyDescriptorPool(device, colorDescriptorPool_, nullptr);
+        vkDestroyDescriptorPool(device, mvpDescriptorPool_, nullptr);
+        
         hostVertexBuffer_.reset();
         deviceVertexBuffer_.reset();
         hostIndicesBuffer_.reset();
@@ -242,6 +244,9 @@ namespace render_2d {
         presentInfo.pImageIndices = &imageIndex;
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = &ctx.swapchain_->swapchain;
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = &renderFinishSems_[curFrame_];
+
         res = vkQueuePresentKHR(ctx.presentQueue_, &presentInfo);
         if (res != VK_SUCCESS) {
             std::cerr << "Render Failed to present to screen" << std::endl;

@@ -18,6 +18,7 @@ namespace render_2d {
 
         // init vulkan Renderer
         renderer_ = std::make_unique<Renderer>(Context::GetInstance().swapchain_->images.size());
+        // renderer_ = std::make_unique<Renderer>(1);
         renderer_->SetProjectMat(width, 0, 0, height, -1, 1);
     }
 
