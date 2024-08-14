@@ -2,6 +2,8 @@
 
 #include "GLFW/glfw3.h"
 #include "../include/render2d.h"
+#include <chrono>  
+#include <iomanip>  
 
 // 全局变量，用于跟踪当前选择的颜色  
 render_2d::Color currentColor = {1.0f, 0.0f, 0.0f, 1.0f}; // 初始为红色  
@@ -64,6 +66,9 @@ int main(void) {
         return -1;
     }
 
+    int frame_count = 0;  
+    std::chrono::high_resolution_clock::time_point last_frame_time = std::chrono::high_resolution_clock::now();  
+
     /* 获得GLFW 所支持的拓展个数 */
     uint32_t extensionCount = 0;
     const char **extensions = glfwGetRequiredInstanceExtensions(&extensionCount);
@@ -92,6 +97,8 @@ int main(void) {
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window)) {
+        std::chrono::high_resolution_clock::time_point current_frame_time = std::chrono::high_resolution_clock::now();  
+
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 
@@ -105,6 +112,15 @@ int main(void) {
 
         /* Draw */
         renderer->DrawRect(render_2d::Rect{glm::vec2(x, y), glm::vec2(200, 300)});
+
+        // 更新FPS计数  
+        frame_count++;  
+        auto duration = std::chrono::duration_cast<std::chrono::seconds>(current_frame_time - last_frame_time).count();  
+        if (duration >= 1) {  
+            std::cout << "DrawRect FPS: " << frame_count << std::endl;  
+            frame_count = 0; // 重置FPS计数  
+            last_frame_time = current_frame_time; // 更新上一次时间戳  
+        }  
     }
 
     render_2d::Quit();
